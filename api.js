@@ -77,24 +77,42 @@ async function getItemRecipe(item) {
 
 
 
-async function getNecessaryResourcesToCraft(item) {
+async function getNecessaryResourcesToCraft(item, amount) {
   // Needs to be further developed. If my character has some part of the item
   // he should not get all the necessary resources from the bank, but just the missing part
   const recipe  = await getItemRecipe(item);
-  const enoughItems = await characterHasEnoughItems(recipe)
+  const enoughMaterial = await characterHasEnoughMaterialFor(recipe, amount)
 
-  if (!enoughItems) {
+  if (!enoughMaterial) {
     for (const { code, quantity } of recipe) {
-      await withdraw(code, quantity);
+      await withdraw(code, quantity * amount);
     }
   }
   return;
 }
 
 
-async function characterHasEnoughItems(items) {
-  const inventory = await getCharacterInventory(character)
-  return items.every((item) => inventory[item.key] && inventory[item.key] >= item.quantity);
+async function characterHasEnoughMaterialFor(items, amount) {
+  const inventory = await getCharacterInventory();
+
+  // Check if I have enough material for the amount
+  // of items I want to craft
+
+
+//   "inventory": [
+//     "slot": 0,
+//     "code": "string",
+//     "quantity": 0
+// ]
+
+  for (let item of items) {
+    let code = item.code
+    const requiredQuantity = item.quantity * amount;
+    if (!inventory[code] || inventory[code] < requiredQuantity) {
+      return false;
+    }
+  }
+  return true;
 }
 
 
@@ -108,29 +126,37 @@ async function getCharacterInventory() {
   }
   const characterData = await response.json()
   const inventory = characterData.data[0].inventory
-  return inventory
+  const inventoryItems = extractIndividualInventorySlots(inventory)
+  return inventoryItems
   } catch (error) {
   throw new Error(error)
   }
 }
 
+function extractIndividualInventorySlots(inventory) {
+  let slotsContent = {}
+  for (let slot of inventory) {
+    slotsContent[slot.code] = slot.quantity
+  }
+  return slotsContent
+}
+
+
 // CRAFT ITEMS
 export async function craft(station, code, quantity) {
   try {
-    await getNecessaryResourcesToCraft(code)
+    await getNecessaryResourcesToCraft(code, quantity)
     await moveTo(station);
   } catch (error) {
     throw new Error(error.message)
   }
 
   // Get necessary resources => Modify withdraw function to handle inventory
-
   requestOptions = switchToPostRequest(requestOptions);
   requestOptions['body'] = JSON.stringify({
       code: code,
       quantity: quantity
   });
-
   try {
     const response = await fetch(`${server}/my/${character}/action/crafting`, requestOptions);
     if (!response.ok) {
@@ -138,12 +164,12 @@ export async function craft(station, code, quantity) {
     }
     const feedback = await response.json();
     const cooldownInSeconds = feedback.data.cooldown.total_seconds;
-    console.log(`Crafted: ${code}`);
+    console.log(`Crafted: ${quantity} of ${code}`);
     await waitForCooldown(cooldownInSeconds);
-
   } catch(error) {
-      console.error(error.message);
+    console.error(error.message);
   }
+
 }
 
 
