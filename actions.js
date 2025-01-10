@@ -19,6 +19,7 @@ export async function moveTo(target) {
   const location = locations[target]
 
   if (atTargetLocation(location)) {
+    console.log('Already at destination')
     return;
   }
 

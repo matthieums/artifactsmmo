@@ -3,7 +3,6 @@ import requestOptionsBuilder from "./requestOptionsBuilder.js";
 import urlBuilder from "./urlBuilder.js";
 import { compareObjects, extractLevelsFrom } from "./utils.js";
 
-
 export let CURRENT_POSITION = null;
 export let CURRENT_LEVELS = {};
 
@@ -14,8 +13,7 @@ export async function fetchState() {
 }
 
 export function atTargetLocation(target) {
-    console.log(CURRENT_POSITION, target)
-    return (CURRENT_POSITION == target);
+    return (JSON.stringify(CURRENT_POSITION) == JSON.stringify(target));
 }
 
 export async function setCurrentPosition() {
@@ -36,7 +34,6 @@ export async function setCurrentLevels() {
     for (let key of keys) {
         CURRENT_LEVELS[key] = stats[key]
     }
-    
 }
 
 export function UpdateLevels(stats) {
