@@ -71,36 +71,40 @@ export async function checkForAnyLevelUp(levelsToCheck) {
 
     try {
         const response = await fetch(url, requestOptions);
-    
+
         if(!response.ok) {
-            handleErrorCode(response.status)
+            handleErrorCode(response.status);
+            return;
         }
-    
-        const data = await response.json()
-        const character_data = data.data[0]
-        const levels = extractLevelsFrom(character_data)
+
+        const data = await response.json();
+        const character_data = data.data[0];
+
+        const levels = extractLevelsFrom(character_data);
+
         return levels
-    
-      } catch (error) {
+
+    } catch (error) {
         console.error('Error fetching position:', error);
         throw error;
-      }
+    }
 }
 
 export async function getCurrentPosition() {
   try {
     const requestOptions = requestOptionsBuilder.buildGetRequestOptions();
     const url = urlBuilder.getCharactersUrl();
+
     const response = await fetch(url, requestOptions);
 
     if(!response.ok) {
         handleErrorCode(response.status)
     }
 
-    const data = await response.json()
-    const x = data.data[0]['x']
-    const y = data.data[0]['y']
-    return [x, y]
+    const { data } = await response.json();
+    const { x, y } = data[0];
+
+    return [x, y];
 
   } catch (error) {
     console.error('Error fetching position:', error);
