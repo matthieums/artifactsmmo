@@ -20,6 +20,8 @@ export const locations = {
     "food": [1, 1],
     "forge": [1, 5],
     "armor": [3, 1],
+    "jewelry": [1, 3],
+    "alchemy": [2, 3],
 
     "bank": [4, 1],
 

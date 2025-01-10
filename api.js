@@ -352,8 +352,6 @@ export async function withdraw(code, quantity) {
 }
 
 
-
-
 export async function getCurrentPosition() {
   requestOptions = switchToGetRequest(requestOptions);
 
