@@ -206,14 +206,21 @@ export async function fight(monster) {
       const feedback = await response.json()
 
       const fightData = feedback.data.fight
-      console.log(fightData)
       const { xp, gold, drops } = fightData
       
-      scriptData.loot['gold'] = gold
-      Object.entries(drops).forEach(([key, value]) => {
-        scriptData.loot[key] = value
-      })
 
+
+
+
+
+      scriptData.loot['gold'] = gold
+      drops.forEach(drop => {
+        if (!scriptData.loot[drop.code]) {
+          scriptData.loot[drop.code] = 0;
+        }
+        scriptData.loot[drop.code] += drop.quantity;
+      });
+      
       scriptData.xp += parseInt(xp);
 
       const character_data = feedback.data.character
@@ -390,9 +397,8 @@ export async function equip(code, slot, quantity) {
       handleErrorCode(response.status)
     }
     console.log(`Succesfully equipped ${code} to ${slot}`)
-
   } catch (error) {
-    throw new Error(error)
+    throw error
   }
 }
 

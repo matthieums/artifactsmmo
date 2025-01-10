@@ -25,7 +25,8 @@ export const locations = {
 
     "bank": [4, 1],
 
-    "santa_claus": [1, 19]
+    "santa_claus": [1, 19],
+    "task_master": [1, 2]
 }
 
 
