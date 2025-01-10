@@ -145,7 +145,7 @@ function extractIndividualInventorySlots(inventory) {
 // CRAFT ITEMS
 export async function craft(station, code, quantity) {
   try {
-    await getNecessaryResourcesToCraft(code, quantity)
+    // await getNecessaryResourcesToCraft(code, quantity)
     await moveTo(station);
   } catch (error) {
     throw new Error(error.message)
@@ -157,6 +157,8 @@ export async function craft(station, code, quantity) {
       code: code,
       quantity: quantity
   });
+  INFINITE_TRIGGER = true;
+  while (INFINITE_TRIGGER){
   try {
     const response = await fetch(`${server}/my/${character}/action/crafting`, requestOptions);
     if (!response.ok) {
@@ -169,7 +171,7 @@ export async function craft(station, code, quantity) {
   } catch(error) {
     console.error(error.message);
   }
-
+}
 }
 
 
@@ -373,6 +375,29 @@ export async function getCurrentPosition() {
     throw error;
   }
 }
+
+export async function equip(code, slot, quantity) {
+  const url = `${server}/my/${character}/action/equip`
+
+  requestOptions = switchToPostRequest(requestOptions);
+  requestOptions['body'] = JSON.stringify({
+    'code': code,
+    'slot': slot,
+    'quantity': quantity
+  })
+
+  try {
+    const response = fetch(url, requestOptions);
+    if (!response.ok) {
+      handleErrorCode(response.status)
+    }
+    console.log(`Succesfully equipped ${code} to ${slot}`)
+
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 
   // Returns a list of key, values containing a stat and its current level
   export async function getCurrentLevels() {

@@ -1,5 +1,5 @@
 
-import { moveTo, fight, gather, rest, craft, deposit, withdraw } from "./api.js";
+import { moveTo, fight, gather, rest, craft, deposit, withdraw, equip } from "./api.js";
 import { setCurrentPosition, setCurrentLevels } from "./state.js";
 
 
@@ -10,7 +10,8 @@ const commands = {
   gather: gather,
   craft: craft,
   deposit: deposit,
-  withdraw: withdraw
+  withdraw: withdraw,
+  equip: equip
 }
 
 async function main() {
