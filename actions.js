@@ -6,16 +6,16 @@ handleScriptInterruption, setupBankRequest} from "./utils.js";
 import { getCharacterInventory } from "./inventory.js";
 import { locations } from "./locations.js";
 import { rl } from "./main.js";
+
 import urlBuilder from "./urlBuilder.js";
 import requestOptionsBuilder from "./requestOptionsBuilder.js";
-
-const character = "Arthurus"
+import { character } from "./urlBuilder.js";
 
 let INFINITE_TRIGGER = false;
 
+
 // MOVE TO LOCATION
 export async function moveTo(target) {
-
   const location = locations[target]
 
   if (atTargetLocation(location)) {
@@ -25,20 +25,23 @@ export async function moveTo(target) {
   const [x, y] = location;
   const body = {x, y};
   const url = urlBuilder.getMoveActionUrl();
-  console.log(url)
   const requestOptions = requestOptionsBuilder.buildPostRequestOptions(body);
-  console.log(requestOptions)
+
   try {
     const response = await fetch(url, requestOptions);
+
     if (!response.ok) {
-      handleErrorCode(response.status)
-  }
-  const feedback = await response.json()
-  const cooldownInSeconds = feedback.data.cooldown.total_seconds
+      handleErrorCode(response.status);
+    }
+
+  const { data: { cooldown: { total_seconds } } } = await response.json();
+
   console.log(`Succesfully moved to (${x}, ${y})`);
   updatePosition(location)
-  await waitForCooldown(cooldownInSeconds, character)
-  } catch(error) {
+
+  await waitForCooldown(total_seconds, character)
+  
+  } catch (error) {
     throw new Error(error)
   }
 }
