@@ -2,7 +2,8 @@
 import { handleErrorCode } from "./errorhandler.js";
 import { locations, updatePosition, atTargetLocation, checkForAnyLevelUp } from "./state.js";
 import { waitForCooldown, displayCombatLog, switchToGetRequest,
-  switchToPostRequest, extractLevelsFrom, handleScriptInterruption} from "./utils.js";
+  switchToPostRequest, extractLevelsFrom, handleScriptInterruption,
+setupBankRequest} from "./utils.js";
 
 let INFINITE_TRIGGER = false;
 
@@ -54,19 +55,75 @@ export async function moveTo(target) {
   updatePosition(location)
   await waitForCooldown(cooldownInSeconds)
   } catch(error) {
-      console.error(error.message);
+    throw new Error(error)
   }
 }
-  
 
+async function getItemRecipe(item) {
+  const url = `${server}/items/${item}`
+  requestOptions = switchToGetRequest(requestOptions)
+  
+  try {
+    const response = await fetch(url, requestOptions)
+    if(!response.ok) {
+      handleErrorCode(response.status)
+    }
+    const data = await response.json()
+    return data.data.craft.items;
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+
+
+async function getNecessaryResourcesToCraft(item) {
+  // Needs to be further developed. If my character has some part of the item
+  // he should not get all the necessary resources from the bank, but just the missing part
+  const recipe  = await getItemRecipe(item);
+  const enoughItems = await characterHasEnoughItems(recipe)
+
+  if (!enoughItems) {
+    for (const { code, quantity } of recipe) {
+      await withdraw(code, quantity);
+    }
+  }
+  return;
+}
+
+
+async function characterHasEnoughItems(items) {
+  const inventory = await getCharacterInventory(character)
+  return items.every((item) => inventory[item.key] && inventory[item.key] >= item.quantity);
+}
+
+
+async function getCharacterInventory() {
+  try {  
+  const url = `${server}/my/characters/`
+  requestOptions = switchToGetRequest(requestOptions)
+  const response = await fetch(url, requestOptions)
+  if (!response.ok) {
+    handleErrorCode(response.status)
+  }
+  const characterData = await response.json()
+  const inventory = characterData.data[0].inventory
+  return inventory
+  } catch (error) {
+  throw new Error(error)
+  }
+}
 
 // CRAFT ITEMS
 export async function craft(station, code, quantity) {
-
-  await moveTo(station);
+  try {
+    await getNecessaryResourcesToCraft(code)
+    await moveTo(station);
+  } catch (error) {
+    throw new Error(error.message)
+  }
 
   // Get necessary resources => Modify withdraw function to handle inventory
-  withdraw(code, resources)
 
   requestOptions = switchToPostRequest(requestOptions);
   requestOptions['body'] = JSON.stringify({
@@ -234,45 +291,36 @@ export async function gather(location) {
 // BANK ACTIONS
 export async function deposit(code, quantity) {
   
-  await moveTo('bank')
-  
-  requestOptions = switchToPostRequest(requestOptions)
-  requestOptions['body'] = JSON.stringify({
-    "code": code,
-    "quantity": quantity
-  })
+  await moveTo('bank');
+  requestOptions = setupBankRequest(requestOptions, code, quantity)
 
   try {
     const response = await fetch(`${server}/my/${character}/action/bank/deposit`, requestOptions)
     if (!response.ok) {
       handleErrorCode(response.status);
     }
+    console.log(`Succesfully deposited ${quantity} ${code}`)
   } catch (error) {
-    console.error(error.message)
+    throw new Error(error.message)
   }
-  console.log(`Succesfully deposited ${quantity} ${item}`)
 }
-
 
 export async function withdraw(code, quantity) {
   
   await moveTo('bank');
-
-  requestOptions = switchToPostRequest(requestOptions)
-  requestOptions['body'] = JSON.stringify({
-    "code": code,
-    "quantity": quantity
-  })
+  requestOptions = setupBankRequest(requestOptions, code, quantity)
 
   try {
     const response = await fetch(`${server}/my/${character}/action/bank/withdraw`, requestOptions)
     if (!response.ok) {
       handleErrorCode(response.status);
     }
+    const data = await response.json()
+    console.log(`Succesfully withdrew ${quantity} ${code}`)
+    await waitForCooldown(data.data.cooldown.total_seconds)
   } catch (error) {
-    console.error(error.message)
+    throw new Error(error.message)
   }
-  console.log(`Succesfully withdrew ${quantity} ${item}`)
 }
 
 

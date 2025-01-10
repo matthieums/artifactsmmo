@@ -138,3 +138,13 @@ export function handleScriptInterruption(bundle) {
       process.exit(1);
     });
 }
+
+export function setupBankRequest(requestOptions, code, quantity) {
+  requestOptions = switchToPostRequest(requestOptions)
+  requestOptions['body'] = ''
+  requestOptions['body'] = JSON.stringify({
+    "code": code,
+    "quantity": quantity
+  })
+  return requestOptions
+}
