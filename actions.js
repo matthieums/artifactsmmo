@@ -1,151 +1,54 @@
 
-import { handleErrorCode } from "./errorhandler.js";
-import { locations, updatePosition, atTargetLocation, checkForAnyLevelUp } from "./state.js";
-import { waitForCooldown, displayCombatLog, switchToGetRequest,
-  switchToPostRequest, extractLevelsFrom, handleScriptInterruption,
-setupBankRequest} from "./utils.js";
+import { handleErrorCode } from "./errorhandling/errorhandler.js";
+import { updatePosition, atTargetLocation, checkForAnyLevelUp } from "./state.js";
+import { waitForCooldown, displayCombatLog, extractLevelsFrom, 
+handleScriptInterruption, setupBankRequest} from "./utils.js";
+import { getCharacterInventory } from "./inventory.js";
+import { locations } from "./locations.js";
+import { rl } from "./main.js";
+import urlBuilder from "./urlBuilder.js";
+import requestOptionsBuilder from "./requestOptionsBuilder.js";
+
+const character = "Arthurus"
 
 let INFINITE_TRIGGER = false;
 
-const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6Im1hcnRlbnMubWF0dGhpZXVAaG90bWFpbC5jb20iLCJwYXNzd29yZF9jaGFuZ2VkIjoiIn0.ARDWMe5_tUvMPvrrNR_-tuSAOcr1EWOPruhYFj3u_FY";
-const server = "https://api.artifactsmmo.com";
-export const character = "Arthurus"
-// Considering to use other characters? 
-// I will need to create a "busy" trigger, and find a way to locate a character
-// So I can send the closer one to the location I'm needing someone at
-
-var myHeaders = new Headers();
-myHeaders.append("Accept", "application/json");
-myHeaders.append("Content-Type", "application/json");
-myHeaders.append("Authorization", `Bearer ${token}`);
-
-var requestOptions = {
-  method: 'POST',
-  headers: myHeaders,
-  redirect: 'follow'
-}
-
-
 // MOVE TO LOCATION
 export async function moveTo(target) {
+
   const location = locations[target]
+
   if (atTargetLocation(location)) {
-    return
+    return;
   }
-  console.log(`Attempting to move to ${location}`)
-  requestOptions = switchToPostRequest(requestOptions)
-  const [x, y] = location
 
+  const [x, y] = location;
+  const body = {x, y};
+  const url = urlBuilder.getMoveActionUrl();
+  console.log(url)
+  const requestOptions = requestOptionsBuilder.buildPostRequestOptions(body);
+  console.log(requestOptions)
   try {
-    requestOptions['body'] =     
-    JSON.stringify({
-      x: x,
-      y: y 
-    });
-
-    const response = await fetch(`${server}/my/${character}/action/move`, requestOptions);
-
+    const response = await fetch(url, requestOptions);
     if (!response.ok) {
       handleErrorCode(response.status)
   }
-  
   const feedback = await response.json()
   const cooldownInSeconds = feedback.data.cooldown.total_seconds
-  console.log(`Moved to (${x}, ${y})`);
+  console.log(`Succesfully moved to (${x}, ${y})`);
   updatePosition(location)
-  await waitForCooldown(cooldownInSeconds)
+  await waitForCooldown(cooldownInSeconds, character)
   } catch(error) {
     throw new Error(error)
   }
 }
 
-async function getItemRecipe(item) {
-  const url = `${server}/items/${item}`
-  requestOptions = switchToGetRequest(requestOptions)
-  
-  try {
-    const response = await fetch(url, requestOptions)
-    if(!response.ok) {
-      handleErrorCode(response.status)
-    }
-    const data = await response.json()
-    return data.data.craft.items;
-  } catch (error) {
-    throw new Error(error)
-  }
-}
-
-
-
-async function getNecessaryResourcesToCraft(item, amount) {
-  // Needs to be further developed. If my character has some part of the item
-  // he should not get all the necessary resources from the bank, but just the missing part
-  const recipe  = await getItemRecipe(item);
-  const enoughMaterial = await characterHasEnoughMaterialFor(recipe, amount)
-
-  if (!enoughMaterial) {
-    for (const { code, quantity } of recipe) {
-      await withdraw(code, quantity * amount);
-    }
-  }
-  return;
-}
-
-
-async function characterHasEnoughMaterialFor(items, amount) {
-  const inventory = await getCharacterInventory();
-
-  // Check if I have enough material for the amount
-  // of items I want to craft
-
-
-//   "inventory": [
-//     "slot": 0,
-//     "code": "string",
-//     "quantity": 0
-// ]
-
-  for (let item of items) {
-    let code = item.code
-    const requiredQuantity = item.quantity * amount;
-    if (!inventory[code] || inventory[code] < requiredQuantity) {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-async function getCharacterInventory() {
-  try {  
-  const url = `${server}/my/characters/`
-  requestOptions = switchToGetRequest(requestOptions)
-  const response = await fetch(url, requestOptions)
-  if (!response.ok) {
-    handleErrorCode(response.status)
-  }
-  const characterData = await response.json()
-  const inventory = characterData.data[0].inventory
-  const inventoryItems = extractIndividualInventorySlots(inventory)
-  return inventoryItems
-  } catch (error) {
-  throw new Error(error)
-  }
-}
-
-function extractIndividualInventorySlots(inventory) {
-  let slotsContent = {}
-  for (let slot of inventory) {
-    slotsContent[slot.code] = slot.quantity
-  }
-  return slotsContent
-}
 
 
 // CRAFT ITEMS
 export async function craft(station, code, quantity) {
   try {
-    // await getNecessaryResourcesToCraft(code, quantity)
+    await getNecessaryResourcesToCraft(code, quantity)
     await moveTo(station);
   } catch (error) {
     throw new Error(error.message)
@@ -207,11 +110,6 @@ export async function fight(monster) {
 
       const fightData = feedback.data.fight
       const { xp, gold, drops } = fightData
-      
-
-
-
-
 
       scriptData.loot['gold'] = gold
       drops.forEach(drop => {
@@ -220,7 +118,7 @@ export async function fight(monster) {
         }
         scriptData.loot[drop.code] += drop.quantity;
       });
-      
+
       scriptData.xp += parseInt(xp);
 
       const character_data = feedback.data.character
@@ -281,7 +179,7 @@ export async function gather(location) {
     scriptData.xp += parseInt(details.xp);
 
     const levels = extractLevelsFrom(character_data)
-    const levelUps = checkForAnyLevelUp(levels)
+    const levelUps = await checkForAnyLevelUp(levels)
     
     if (levelUps) {
       Object.entries(levelUps).forEach(([key, value]) => {
@@ -359,27 +257,11 @@ export async function withdraw(code, quantity) {
 }
 
 
-export async function getCurrentPosition() {
-  requestOptions = switchToGetRequest(requestOptions);
 
-  try {
-    const url = `${server}/my/characters/`;
-    const response = await fetch(url, requestOptions);
 
-    if(!response.ok) {
-        handleErrorCode(response.status)
-    }
 
-    const data = await response.json()
-    const x = data.data[0]['x']
-    const y = data.data[0]['y']
-    return [x, y]
 
-  } catch (error) {
-    console.error('Error fetching position:', error);
-    throw error;
-  }
-}
+
 
 export async function equip(code, slot, quantity) {
   const url = `${server}/my/${character}/action/equip`
@@ -403,24 +285,57 @@ export async function equip(code, slot, quantity) {
 }
 
 
-  // Returns a list of key, values containing a stat and its current level
-  export async function getCurrentLevels() {
-    requestOptions = switchToGetRequest(requestOptions);
-    try {
-        const url = `${server}/my/characters/`;
-        const response = await fetch(url, requestOptions);
-    
-        if(!response.ok) {
-            handleErrorCode(response.status)
-        }
-    
-        const data = await response.json()
-        const character_data = data.data[0]
-        const levels = extractLevelsFrom(character_data)
-        return levels
-    
-      } catch (error) {
-        console.error('Error fetching position:', error);
-        throw error;
-      }
+
+async function getItemRecipe(item) {
+  const url = `${server}/items/${item}`
+  requestOptions = switchToGetRequest(requestOptions)
+  
+  try {
+    const response = await fetch(url, requestOptions)
+    if(!response.ok) {
+      handleErrorCode(response.status)
+    }
+    const data = await response.json()
+    return data.data.craft.items;
+  } catch (error) {
+    throw new Error(error)
+  }
 }
+
+
+
+async function getNecessaryResourcesToCraft(item, amount) {
+  // Needs to be further developed. If my character has some part of the item
+  // he should not get all the necessary resources from the bank, but just the missing part
+  const recipe  = await getItemRecipe(item);
+  const enoughMaterial = await characterHasEnoughMaterialFor(recipe, amount)
+
+  if (!enoughMaterial) {
+    for (const { code, quantity } of recipe) {
+      await withdraw(code, quantity * amount);
+    }
+  }
+  return;
+}
+
+
+async function characterHasEnoughMaterialFor(items, amount) {
+  const inventory = await getCharacterInventory();
+
+  // Check if I have enough material for the amount
+  // of items I want to craft
+
+  for (let item of items) {
+    let code = item.code
+    const requiredQuantity = item.quantity * amount;
+    if (!inventory[code] || inventory[code] < requiredQuantity) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function exit() {
+  console.log('Exiting...');
+  rl.close();
+  }

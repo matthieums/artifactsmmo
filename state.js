@@ -1,37 +1,18 @@
 
-import { getCurrentPosition, getCurrentLevels } from "./api.js";
+import requestOptionsBuilder from "./requestOptionsBuilder.js";
 import { compareObjects, extractLevelsFrom } from "./utils.js";
 
 export let CURRENT_POSITION = null;
 export let CURRENT_LEVELS = {};
-export const locations = {
-    // Monsters
-    "chicken": [0, 1],
-    "cow": [0, 2],
-    "green_slime": [0, -1],
 
-    // Resources
-    "copper": [2, 0],
-    "ash_tree": [-1, 0],
-    "sunflower": [2, 2],
-
-    // Crafting stations
-    "weapon": [2, 1],
-    "food": [1, 1],
-    "forge": [1, 5],
-    "armor": [3, 1],
-    "jewelry": [1, 3],
-    "alchemy": [2, 3],
-
-    "bank": [4, 1],
-
-    "santa_claus": [1, 19],
-    "task_master": [1, 2]
+export async function fetchState() {
+ await setCurrentPosition();
+ await setCurrentLevels();
+ return;
 }
 
-
 export function atTargetLocation(target) {
-    return (JSON.stringify(CURRENT_POSITION) === JSON.stringify(target));
+    return (JSON.stringify(CURRENT_POSITION) === JSON.stringify(target));move 
 }
 
 export async function setCurrentPosition() {
@@ -84,3 +65,46 @@ export async function checkForAnyLevelUp(levelsToCheck) {
     }
 }
 
+ // Returns a list of key, values containing a stat and its current level
+  export async function getCurrentLevels() {
+    const requestOptions = requestOptionsBuilder.buildGetRequestOptions();
+    try {
+        const url = `${server}/my/characters/`;
+        const response = await fetch(url, requestOptions);
+    
+        if(!response.ok) {
+            handleErrorCode(response.status)
+        }
+    
+        const data = await response.json()
+        const character_data = data.data[0]
+        const levels = extractLevelsFrom(character_data)
+        return levels
+    
+      } catch (error) {
+        console.error('Error fetching position:', error);
+        throw error;
+      }
+}
+
+export async function getCurrentPosition() {
+  const requestOptions = requestOptionsBuilder.buildGetRequestOptions();
+
+  try {
+    const url = `${server}/my/characters/`;
+    const response = await fetch(url, requestOptions);
+
+    if(!response.ok) {
+        handleErrorCode(response.status)
+    }
+
+    const data = await response.json()
+    const x = data.data[0]['x']
+    const y = data.data[0]['y']
+    return [x, y]
+
+  } catch (error) {
+    console.error('Error fetching position:', error);
+    throw error;
+  }
+}

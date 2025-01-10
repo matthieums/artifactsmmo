@@ -1,5 +1,5 @@
 
-export async function waitForCooldown(cooldown) {
+export async function waitForCooldown(cooldown, character) {
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
     let remainingCooldown =  cooldown
@@ -13,21 +13,11 @@ export async function waitForCooldown(cooldown) {
       await delay(1000);
       remainingCooldown--;
     }
+    console.log(`${character} is idle...`)
     clearInterval(interval);
     return
   }
 
-
-  export function switchToPostRequest(requestOptions) {
-    requestOptions['method'] = 'POST';
-    return requestOptions;
-  }
-  
-  export function switchToGetRequest(requestOptions) {
-    requestOptions['method'] = 'GET';
-    delete requestOptions.body;
-    return requestOptions;
-  }
 
   export function displayCombatLog(monster, data) {
     // Construire autour d'un interval basé sur le cooldown restant
