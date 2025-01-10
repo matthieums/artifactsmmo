@@ -1,6 +1,8 @@
 
 import requestOptionsBuilder from "./requestOptionsBuilder.js";
+import urlBuilder from "./urlBuilder.js";
 import { compareObjects, extractLevelsFrom } from "./utils.js";
+
 
 export let CURRENT_POSITION = null;
 export let CURRENT_LEVELS = {};
@@ -12,7 +14,8 @@ export async function fetchState() {
 }
 
 export function atTargetLocation(target) {
-    return (JSON.stringify(CURRENT_POSITION) === JSON.stringify(target));move 
+    console.log(CURRENT_POSITION, target)
+    return (CURRENT_POSITION == target);
 }
 
 export async function setCurrentPosition() {
@@ -45,11 +48,7 @@ export function UpdateLevels(stats) {
     }
 }
 
-// Now I should create a dictionary that contains all levellable stats
-// Each levellable should be compared to its previous value.
-// If a difference is found: Add the level difference to the script end log
-// Maybe the script end log should be a big object containing lots of values 
-// Depending on the action
+
 export async function checkForAnyLevelUp(levelsToCheck) {
     const keys = compareObjects(CURRENT_LEVELS !== levelsToCheck)
     const levelsGained = {}
@@ -68,8 +67,9 @@ export async function checkForAnyLevelUp(levelsToCheck) {
  // Returns a list of key, values containing a stat and its current level
   export async function getCurrentLevels() {
     const requestOptions = requestOptionsBuilder.buildGetRequestOptions();
+    const url = urlBuilder.getCharactersUrl();
+
     try {
-        const url = `${server}/my/characters/`;
         const response = await fetch(url, requestOptions);
     
         if(!response.ok) {
@@ -88,10 +88,9 @@ export async function checkForAnyLevelUp(levelsToCheck) {
 }
 
 export async function getCurrentPosition() {
-  const requestOptions = requestOptionsBuilder.buildGetRequestOptions();
-
   try {
-    const url = `${server}/my/characters/`;
+    const requestOptions = requestOptionsBuilder.buildGetRequestOptions();
+    const url = urlBuilder.getCharactersUrl();
     const response = await fetch(url, requestOptions);
 
     if(!response.ok) {
