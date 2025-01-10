@@ -3,13 +3,11 @@ import { handleErrorCode } from "./errorhandling/errorhandler.js";
 import { updatePosition, atTargetLocation, checkForAnyLevelUp } from "./state.js";
 import { waitForCooldown, displayCombatLog, extractLevelsFrom, 
 handleScriptInterruption, setupBankRequest} from "./utils.js";
-import { getCharacterInventory } from "./inventory.js";
 import { locations } from "./locations.js";
 import { rl } from "./main.js";
-
-import urlBuilder from "./urlBuilder.js";
+import urlBuilder, { character } from "./urlBuilder.js";
 import requestOptionsBuilder from "./requestOptionsBuilder.js";
-import { character } from "./urlBuilder.js";
+import getNecessaryResourcesToCraft from "./crafting.js";
 
 let INFINITE_TRIGGER = false;
 
@@ -48,39 +46,34 @@ export async function moveTo(target) {
 }
 
 
-
 // CRAFT ITEMS
 export async function craft(station, code, quantity) {
   try {
-    await getNecessaryResourcesToCraft(code, quantity)
+    await getNecessaryResourcesToCraft(code, quantity);
     await moveTo(station);
   } catch (error) {
     throw new Error(error.message)
   }
 
-  // Get necessary resources => Modify withdraw function to handle inventory
-  requestOptions = switchToPostRequest(requestOptions);
-  requestOptions['body'] = JSON.stringify({
-      code: code,
-      quantity: quantity
-  });
-  INFINITE_TRIGGER = true;
-  while (INFINITE_TRIGGER){
   try {
-    const response = await fetch(`${server}/my/${character}/action/crafting`, requestOptions);
+    const body = { code, quantity }
+    const requestOptions = requestOptionsBuilder.buildPostRequestOptions(body)
+    const url = urlBuilder.getCraftActionUrl()
+
+    const response = await fetch(url, requestOptions);
+
     if (!response.ok) {
         handleErrorCode(response.status);
     }
-    const feedback = await response.json();
-    const cooldownInSeconds = feedback.data.cooldown.total_seconds;
-    console.log(`Crafted: ${quantity} of ${code}`);
-    await waitForCooldown(cooldownInSeconds);
+
+    const { data: { cooldown: { total_seconds } } } = await response.json();
+    console.log(`Crafted: ${quantity} ${code}`);
+    await waitForCooldown(total_seconds);
+
   } catch(error) {
     console.error(error.message);
   }
 }
-}
-
 
 
 
@@ -262,11 +255,6 @@ export async function withdraw(code, quantity) {
 
 
 
-
-
-
-
-
 export async function equip(code, slot, quantity) {
   const url = `${server}/my/${character}/action/equip`
 
@@ -290,54 +278,6 @@ export async function equip(code, slot, quantity) {
 
 
 
-async function getItemRecipe(item) {
-  const url = `${server}/items/${item}`
-  requestOptions = switchToGetRequest(requestOptions)
-  
-  try {
-    const response = await fetch(url, requestOptions)
-    if(!response.ok) {
-      handleErrorCode(response.status)
-    }
-    const data = await response.json()
-    return data.data.craft.items;
-  } catch (error) {
-    throw new Error(error)
-  }
-}
-
-
-
-async function getNecessaryResourcesToCraft(item, amount) {
-  // Needs to be further developed. If my character has some part of the item
-  // he should not get all the necessary resources from the bank, but just the missing part
-  const recipe  = await getItemRecipe(item);
-  const enoughMaterial = await characterHasEnoughMaterialFor(recipe, amount)
-
-  if (!enoughMaterial) {
-    for (const { code, quantity } of recipe) {
-      await withdraw(code, quantity * amount);
-    }
-  }
-  return;
-}
-
-
-async function characterHasEnoughMaterialFor(items, amount) {
-  const inventory = await getCharacterInventory();
-
-  // Check if I have enough material for the amount
-  // of items I want to craft
-
-  for (let item of items) {
-    let code = item.code
-    const requiredQuantity = item.quantity * amount;
-    if (!inventory[code] || inventory[code] < requiredQuantity) {
-      return false;
-    }
-  }
-  return true;
-}
 
 export function exit() {
   console.log('Exiting...');

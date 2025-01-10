@@ -9,11 +9,22 @@ function getMoveActionUrl() {
     return `${BASE_URL}/my/${character}/action/move`
 }
 
+
+function getCraftActionUrl() {
+    return `${BASE_URL}/my/${character}/action/crafting`
+}
+
 function getCharactersUrl() {
-    return `${BASE_URL}/my/characters/`;
+    return `${BASE_URL}/my/characters/`
+}
+
+function getItemUrl(item) {
+    return `${BASE_URL}/items/${item}`
 }
 
 export default {
     getMoveActionUrl,
-    getCharactersUrl
+    getCharactersUrl,
+    getCraftActionUrl,
+    getItemUrl
   };

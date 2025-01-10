@@ -45,7 +45,6 @@ export function UpdateLevels(stats) {
     }
 }
 
-
 export async function checkForAnyLevelUp(levelsToCheck) {
     const keys = compareObjects(CURRENT_LEVELS !== levelsToCheck)
     const levelsGained = {}
