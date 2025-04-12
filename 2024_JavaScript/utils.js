@@ -19,32 +19,6 @@ export async function waitForCooldown(cooldown, character) {
   }
 
 
-  export function displayCombatLog(monster, data) {
-    // Construire autour d'un interval basé sur le cooldown restant
-    // La vitesse du log s'adaptera au temps de récupération
-    const fightData = data.data.fight
-    const character_data = data.data.character
-  
-    const { xp, gold, drops, turns, 
-      monster_blocked_hits, player_blocked_hits,
-      logs, result } = fightData
-
-      displayCombatResult(result, monster, turns, xp, drops, gold)
-  }
-  
-  export function displayCombatResult(result, monster, turns, xp, drops, gold) {
-    if (result == 'win') {
-      console.log(`Combat WON`)
-      console.log(`${monster} was killed in ${turns} turns`)
-      console.log(`${xp} xp won.`)
-      console.log(`${drops.map(drop => console.log(`Looted ${drop.quantity} ${drop.code}`))} and ${gold} gold`)
-      return;
-    } else {
-      console.log('**Combat LOST**')
-      return;
-    }
-
-  }
 
 // This function will allow comparison of two dictionaries
 // That have the same keys
@@ -79,34 +53,6 @@ export function extractLevelsFrom(data) {
 }
 
 
-// For later: instead of creating objects for the loot, I could create
-// an async function to compare current inventory to the old one and log
-// the difference. Maybe same for the stats
-export function logLootAndXp(bundle) {
-  
-  const { loot, levels, xp } = bundle
-    
-  // Log items looted
-  if (Object.keys(loot).length > 0) {
-      console.log('Loot collected:')
-      for (const [item, quantity] of Object.entries(loot)) {
-        console.log(` ${item}: ${quantity} \n`);
-      }
-    }
-
-    // Log levels gained
-    if (Object.keys(levels).length > 0) {
-      console.log("Levels gained:");
-      for (const [stat, level] of Object.entries(levels)) {
-        console.log(` ${stat}: ${level} \n`);
-      }
-    }
-
-    // Log xp gained from action
-    if (xp) {
-      console.log(`Total xp gained: \n ${xp}`)
-    }
-  }
 
 
   /**

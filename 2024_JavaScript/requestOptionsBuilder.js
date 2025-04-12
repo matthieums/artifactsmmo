@@ -19,9 +19,13 @@ function buildPostRequestOptions(body) {
     const requestOptions = {
         method: 'POST',
         headers: new Headers(defaultHeaders),
-        body: JSON.stringify(body),
         redirect: 'follow'
     }
+
+    if (body) {
+        requestOptions.body = JSON.stringify(body);
+    }
+
     return requestOptions;
 }
 

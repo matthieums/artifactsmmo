@@ -9,6 +9,9 @@ function getMoveActionUrl() {
     return `${BASE_URL}/my/${character}/action/move`
 }
 
+function getFightActionUrl() {
+    return `${BASE_URL}/my/${character}/action/fight`
+}
 
 function getCraftActionUrl() {
     return `${BASE_URL}/my/${character}/action/crafting`
@@ -24,6 +27,7 @@ function getItemUrl(item) {
 
 export default {
     getMoveActionUrl,
+    getFightActionUrl,
     getCharactersUrl,
     getCraftActionUrl,
     getItemUrl

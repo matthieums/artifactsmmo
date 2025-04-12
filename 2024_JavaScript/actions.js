@@ -2,7 +2,7 @@
 import { handleErrorCode } from "./errorhandling/errorhandler.js";
 import { updatePosition, atTargetLocation, checkForAnyLevelUp } from "./state.js";
 import { waitForCooldown, displayCombatLog, extractLevelsFrom, 
-handleScriptInterruption, setupBankRequest} from "./utils.js";
+setupBankRequest} from "./utils.js";
 import { locations } from "./locations.js";
 import { rl } from "./main.js";
 import urlBuilder, { character } from "./urlBuilder.js";
@@ -10,7 +10,6 @@ import requestOptionsBuilder from "./requestOptionsBuilder.js";
 import getNecessaryResourcesToCraft from "./crafting.js";
 
 let INFINITE_TRIGGER = false;
-
 
 // MOVE TO LOCATION
 export async function moveTo(target) {
@@ -76,7 +75,6 @@ export async function craft(station, code, quantity) {
 }
 
 
-
 // FIGHT
 export async function fight(monster) {
 
@@ -91,22 +89,20 @@ export async function fight(monster) {
     xp: xp
   }
 
-  handleScriptInterruption(scriptData);
-
-  requestOptions = switchToPostRequest(requestOptions);
-
-  INFINITE_TRIGGER = true;
+  let INFINITE_TRIGGER = true;
   while(INFINITE_TRIGGER) {
     try {
-      const response = await fetch(`${server}/my/${character}/action/fight`, requestOptions);
+      const requestOptions = requestOptionsBuilder.buildPostRequestOptions();
+      const url = urlBuilder.getFightActionUrl();
+      const response = await fetch(url, requestOptions);
+
       if (!response.ok) {
         handleErrorCode(response.status);
       }
 
-      const feedback = await response.json()
+      response = await response.json();
 
-      const fightData = feedback.data.fight
-      const { xp, gold, drops } = fightData
+      parseFightLoot(response.data)
 
       scriptData.loot['gold'] = gold
       drops.forEach(drop => {
@@ -128,14 +124,16 @@ export async function fight(monster) {
           scriptData.levels[key] = value;
         })}
 
-      const cooldownInSeconds = feedback.data.cooldown.total_seconds
-      
-      displayCombatLog(monster, feedback)
-      await waitForCooldown(cooldownInSeconds)
+      const { data: { cooldown: { total_seconds } } } = await response.json();
+
+      displayCombatLog(monster, feedback);
+
+      await waitForCooldown(total_seconds)
 
       if (feedback.data.character.hp < 20) {
         await rest();
       }
+
     } catch(error) {
         console.log('Error in fight function:', error);
         throw error;
@@ -143,7 +141,6 @@ export async function fight(monster) {
   } 
 }
 
-  
 
 // GATHER
 export async function gather(location) {
@@ -159,7 +156,6 @@ export async function gather(location) {
     xp: xp
   }
 
-  handleScriptInterruption(scriptData);
   INFINITE_TRIGGER = true;
 
   while (INFINITE_TRIGGER) {
@@ -202,7 +198,8 @@ export async function gather(location) {
 }
 
   export async function rest() {
-    requestOptions = switchToPostRequest(requestOptions);
+    requestOptio
+    ns = switchToPostRequest(requestOptions);
     const response = await fetch(`${server}/my/${character}/action/rest`, requestOptions);
     const data = await response.json()
     const cooldownInSeconds = data.data.cooldown.total_seconds
@@ -217,8 +214,9 @@ export async function gather(location) {
 
 
 
-
 // BANK ACTIONS
+
+// Deposit
 export async function deposit(code, quantity) {
   
   await moveTo('bank');
@@ -235,6 +233,7 @@ export async function deposit(code, quantity) {
   }
 }
 
+// Withdraw
 export async function withdraw(code, quantity) {
   
   await moveTo('bank');
@@ -254,7 +253,7 @@ export async function withdraw(code, quantity) {
 }
 
 
-
+// EQUIP
 export async function equip(code, slot, quantity) {
   const url = `${server}/my/${character}/action/equip`
 
@@ -275,8 +274,6 @@ export async function equip(code, slot, quantity) {
     throw error
   }
 }
-
-
 
 
 export function exit() {
