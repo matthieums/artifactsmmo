@@ -1,5 +1,5 @@
 from functools import wraps
-
+from data import locations
 
 def check_character_position(f):
     """Wrapper that checks if character is in the correct position to make the
@@ -9,7 +9,7 @@ def check_character_position(f):
         if args:
             required_position = args[-1]
 
-            if self.position != required_position:
+            if self.position != locations[required_position]:
                 await self.move_to(required_position)
 
             return f(self, *args, **kwargs)
