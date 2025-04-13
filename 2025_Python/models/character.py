@@ -14,7 +14,7 @@ class Character():
         url, headers, data = get_url(character=self.name, action="move", location=location)
         response = requests.post(url=url, headers=headers, data=data)
         json_data = response.json()
-        print(f"{self.name} is moving towards {location}")
+        print(f"{self.name} is moving towards {location}...")
         await asyncio.sleep(json_data["data"]["cooldown"]["total_seconds"])
         print(response.status_code)
         print('move succesful')
@@ -24,10 +24,18 @@ class Character():
     def fight(self, monster: str) -> int:
             url, headers = get_url(character=self.name, action="fight", location=monster)
             response = requests.post(url=url, headers=headers)
-            print(f"{self.name} is fighting {monster}")
+            print(f"{self.name} fought {monster}")
             print(response.text)
             return response.status_code
 
+    async def rest(self):
+        url, headers = get_url(character=self.name, action="rest")
+        response = requests.post(url=url, headers=headers)
+        json_data = response.json()
+        print(response.text)
+        print(f"{self.name} is resting...")
+        await asyncio.sleep(json_data["data"]["cooldown"]["total_seconds"])
+        return response.status_code
 
     def __repr__(self):
         return self.name

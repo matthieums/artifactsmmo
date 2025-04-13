@@ -17,9 +17,7 @@ async def create_instance():
         data = response.json()
         char = data["data"][0]
         hero = Character(char["name"], [char["x"], char["y"]])
-        await hero.fight('cows')
-        # monster = "chicken"
-        # asyncio.run(hero.fight(monster))
+        await hero.fight('chickens')
         return
 
 if __name__ == "__main__":

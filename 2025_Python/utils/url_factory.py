@@ -1,11 +1,12 @@
 import config
 import json
 from data import locations
+from typing import Optional
 
 POST = "POST"
 
 
-def get_url(character: str, action: str, location: str) -> tuple:
+def get_url(character: str, action: str, location: Optional[str] = None) -> tuple:
     if action == "move":
         headers = build_headers(POST)
         x, y = locations[location]
@@ -22,7 +23,10 @@ def get_url(character: str, action: str, location: str) -> tuple:
         url = f"https://api.artifactsmmo.com/my/{character}/action/fight"
         return url, headers
 
-
+    elif action == "rest":
+        headers = build_headers(POST)
+        url = f"https://api.artifactsmmo.com/my/{character}/action/rest"
+        return url, headers
 
 def build_headers(request: str) -> dict:
     if request == POST:

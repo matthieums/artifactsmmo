@@ -1,5 +1,4 @@
 from functools import wraps
-import asyncio
 
 
 def check_character_position(f):
