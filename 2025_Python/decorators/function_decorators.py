@@ -1,5 +1,6 @@
 from functools import wraps
 from data import locations
+import inspect
 
 def check_character_position(f):
     """Wrapper that checks if character is in the correct position to make the
@@ -12,7 +13,10 @@ def check_character_position(f):
             if self.position != locations[required_position]:
                 await self.move_to(required_position)
 
-            return f(self, *args, **kwargs)
+            if inspect.iscoroutinefunction(f):
+                return await f(self, *args, **kwargs)
+            else:
+                return f(self, *args, **kwargs)
         else:
             raise RuntimeError
     return wrapper
