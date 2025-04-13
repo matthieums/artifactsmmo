@@ -31,8 +31,6 @@ class Character():
         json_data = response.json()
         print(f"{self.name} has moved to {location}...")
         await self.handle_cooldown(json_data)
-        print(response.status_code)
-        print('move succesful')
         return response.status_code
 
     @check_character_position
@@ -53,6 +51,17 @@ class Character():
         await self.handle_cooldown(json_data)
         print(response.text)
         return response.status_code
+
+    @check_character_position
+    async def gather(self, resource: str) -> int:
+        url, headers = get_url(character=self.name, action="gather")
+        response = requests.post(url=url, headers=headers)
+        print(f"{self.name} has gathered {resource}")
+        json_data = response.json()
+        await self.handle_cooldown(json_data)
+        print(response.text)
+        return response.status_code
+
 
     def __repr__(self):
         return self.name

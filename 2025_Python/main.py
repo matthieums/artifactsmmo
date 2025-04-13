@@ -17,7 +17,7 @@ async def create_instance():
         data = response.json()
         char = data["data"][0]
         hero = Character(char["name"], [char["x"], char["y"]])
-        await hero.fight('chickens')
+        await hero.gather('ash_tree')
         return
 
 if __name__ == "__main__":

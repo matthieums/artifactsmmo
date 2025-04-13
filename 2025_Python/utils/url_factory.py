@@ -28,6 +28,11 @@ def get_url(character: str, action: str, location: Optional[str] = None) -> tupl
         url = f"https://api.artifactsmmo.com/my/{character}/action/rest"
         return url, headers
 
+    elif action == "gather":
+        headers = build_headers(POST)
+        url = f"https://api.artifactsmmo.com/my/{character}/action/gathering"
+        return url, headers
+
 def build_headers(request: str) -> dict:
     if request == POST:
         headers = {
