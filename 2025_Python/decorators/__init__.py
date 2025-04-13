@@ -1,0 +1,1 @@
+from .function_decorators import check_character_position

@@ -34,4 +34,9 @@ def build_headers(request: str) -> dict:
         return headers
 
     elif request == 'GET':
-        pass
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {config.API_KEY}"
+        }
+        return headers

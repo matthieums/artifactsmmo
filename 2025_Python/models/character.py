@@ -1,6 +1,7 @@
 from utils import get_url
-from data import locations
 import requests
+from decorators import check_character_position
+import asyncio
 
 
 class Character():
@@ -9,26 +10,24 @@ class Character():
         self.position = position
         self.name = name
 
-    def move_to(self, location: str) -> int:
+    async def move_to(self, location: str) -> int:
         url, headers, data = get_url(character=self.name, action="move", location=location)
         response = requests.post(url=url, headers=headers, data=data)
-        print(response.text)
+        json_data = response.json()
+        print(f"{self.name} is moving towards {location}")
+        await asyncio.sleep(json_data["data"]["cooldown"]["total_seconds"])
+        print(response.status_code)
+        print('move succesful')
         return response.status_code
 
+    @check_character_position
     def fight(self, monster: str) -> int:
-        if not self.position:
-            return False
-
-        if self.position == locations[monster]:
             url, headers = get_url(character=self.name, action="fight", location=monster)
             response = requests.post(url=url, headers=headers)
+            print(f"{self.name} is fighting {monster}")
             print(response.text)
             return response.status_code
 
-        else:
-            self.move_to(monster)
-            # WAIT FOR ARRIVAL
-            # FIGHT
 
     def __repr__(self):
         return self.name
