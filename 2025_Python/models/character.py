@@ -4,40 +4,42 @@ from decorators import check_character_position
 import asyncio
 from data import locations
 from typing import Optional
+import httpx
 
 
 class Character():
-    def __init__(self, name: str, position: list, equipment: dict) -> None:
+    def __init__(self, name: str, position: list, equipment: dict, inventory: dict) -> None:
         self.available = True
         self.position = position
         self.name = name
         self.equipment = equipment
+        self.inventory = inventory
 
     @staticmethod
     async def handle_cooldown(data: dict) -> None:
         json_data = data.json()
         cooldown = json_data["data"]["cooldown"]["total_seconds"]
-        remaining = cooldown
+        remaining = cooldown + 1
 
         while remaining > 0:
             print(f"Cooldown remaining: {remaining} seconds")
             sleep_time = min(5, remaining)
             await asyncio.sleep(sleep_time)
             remaining -= sleep_time
-
-        print("Ready for next action!")
         return
 
     @staticmethod
     async def get_information_about(item: str) -> dict:
         url, headers = get_url(action="info", item=item)
-        response = requests.get(url=url, headers=headers)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url=url, headers=headers)
         print(response.text)
         return response.json()
 
     async def move_to(self, location: str) -> int:
         url, headers, data = get_url(character=self.name, action="move", location=location)
-        response = requests.post(url=url, headers=headers, data=data)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers, data=data)
         print(f"{self.name} has moved to {location}...")
         await self.handle_cooldown(response)
         return response.status_code
@@ -45,7 +47,8 @@ class Character():
     @check_character_position
     async def fight(self, location: str) -> int:
         url, headers = get_url(character=self.name, action="fight", location=location)
-        response = requests.post(url=url, headers=headers)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers)
         print(f"{self.name} has fought {location}")
         await self.handle_cooldown(response)
         print(response.text)
@@ -53,7 +56,8 @@ class Character():
 
     async def rest(self):
         url, headers = get_url(character=self.name, action="rest")
-        response = requests.post(url=url, headers=headers)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers)
         print(f"{self.name} has rested")
         await self.handle_cooldown(response)
         print(response.text)
@@ -62,10 +66,12 @@ class Character():
     @check_character_position
     async def gather(self, location: str) -> int:
         url, headers = get_url(character=self.name, action="gather")
-        response = requests.post(url=url, headers=headers)
-        print(f"{self.name} has gathered from {location}")
-        await self.handle_cooldown(response)
-        return response.status_code
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers)
+            print(response.text)
+            print(f"{self.name} has gathered from {location}")
+            await self.handle_cooldown(response)
+            return response.status_code
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()
@@ -81,7 +87,8 @@ class Character():
             action = "equip"
 
         url, headers, data = get_url(character=self.name, action=action, item=item, slot=slot)
-        response = requests.post(url=url, headers=headers, data=data)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers, data=data)
         print(response.text)
         await self.handle_cooldown(response)
         return response.status_code     
@@ -109,17 +116,23 @@ class Character():
 
     @check_character_position
     async def deposit(self, quantity: int, item: str) -> int:
-        url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action="deposit")
-        response = requests.post(url=url, headers=headers, data=data)
-        print(response.text)
-        print(f"{self.name} has deposited {quantity} {item}")
+        if item not in self.inventory:
+            return 0
+
+        deposit_amount = self.inventory[item] - quantity
+
+        url, headers, data = get_url(character=self.name, item=item, quantity=deposit_amount, action="deposit")
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers, data=data)
+        print(f"{self.name} has deposited {deposit_amount} {item}")
         await self.handle_cooldown(response)
         return response.status_code
 
     @check_character_position
     async def withdraw(self, quantity: Optional[int], item: str) -> int:
         url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action="withdraw")
-        response = requests.post(url=url, headers=headers, data=data)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers, data=data)
         print(response.text)
         print(f"{self.name} has withdrawn {quantity} {item}")
         await self.handle_cooldown(response)
