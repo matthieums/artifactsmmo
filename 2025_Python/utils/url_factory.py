@@ -4,9 +4,10 @@ from data import locations
 from typing import Optional
 
 POST = "POST"
+GET = "GET"
 
 
-def get_url(character: str, action: str, location: Optional[str] = None) -> tuple:
+def get_url(character: str, action: str, location: Optional[str] = None, item: Optional[str] = None) -> tuple:
     if action == "move":
         headers = build_headers(POST)
         x, y = locations[location]
@@ -32,6 +33,30 @@ def get_url(character: str, action: str, location: Optional[str] = None) -> tupl
         headers = build_headers(POST)
         url = f"https://api.artifactsmmo.com/my/{character}/action/gathering"
         return url, headers
+
+    elif action == "craft":
+        headers = build_headers(POST)
+        data = json.dumps({
+            "code": item
+        })
+        url = f"https://api.artifactsmmo.com/my/{character}/action/crafting"
+        return url, headers, data
+
+def get_info_url(item):
+    headers = build_headers(GET)
+    url = f"https://api.artifactsmmo.com/items/{item}"
+    return url, headers
+
+
+def get_unequip_url(character, slot):
+    headers = build_headers(POST)
+    url = f"https://api.artifactsmmo.com/my/{character}/action/unequip"
+    data = {
+        "slot": slot
+    }
+    json_data = json.dumps(data)
+    return url, headers, json_data
+
 
 def build_headers(request: str) -> dict:
     if request == POST:

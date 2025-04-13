@@ -1,1 +1,1 @@
-from .url_factory import get_url
+from .url_factory import get_url, get_info_url, get_unequip_url
