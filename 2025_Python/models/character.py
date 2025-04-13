@@ -1,16 +1,16 @@
-from utils import get_url, get_info_url, get_unequip_url
+from utils import get_url
 import requests
 from decorators import check_character_position
 import asyncio
 from data import locations
 
 
-
 class Character():
-    def __init__(self, name: str, position: list) -> None:
+    def __init__(self, name: str, position: list, equipment: dict) -> None:
         self.available = True
         self.position = position
         self.name = name
+        self.equipment = equipment
 
     @staticmethod
     async def handle_cooldown(data: dict) -> None:
@@ -29,7 +29,7 @@ class Character():
 
     @staticmethod
     async def get_information_about(item: str) -> dict:
-        url, headers = get_info_url(item)
+        url, headers = get_url(action="info", item=item)
         response = requests.get(url=url, headers=headers)
         print(response.text)
         return response.json()
@@ -67,13 +67,24 @@ class Character():
         print(response.text)
         return response.status_code
 
-    async def unequip(self, slot: str) -> int:
+    def has_equipped(self, item: str):
+        return item in self.equipment.values()
+
+    async def toggle_equiped(self, item: str) -> int:
         # TODO: Check if already unequipped
-        url, headers, data = get_unequip_url(character=self.name, slot=slot)
+        item_data = await self.get_information_about(item)
+        slot = item_data["data"]["type"]
+
+        if self.has_equipped(item):
+            action = "unequip"
+        else:
+            action = "equip"
+
+        url, headers, data = get_url(character=self.name, action=action, item=item, slot=slot)
         response = requests.post(url=url, headers=headers, data=data)
-        await self.handle_cooldown(response)
         print(response.text)
-        return response.status_code
+        await self.handle_cooldown(response)
+        return response.status_code     
 
     async def craft(self, item: str) -> int:
         item_data = await self.get_information_about(item)

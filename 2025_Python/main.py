@@ -16,13 +16,18 @@ async def create_instance():
         response = await client.get(url=url, headers=headers)
         data = response.json()
         char = data["data"][0]
-        hero = Character(char["name"], [char["x"], char["y"]])
-        # while True:
-            # await hero.gather('ash_tree')
-        await hero.craft("wooden_staff")
-        # await hero.craft('wooden_stick')
+        slot_keys = [
+                "weapon_slot", "shield_slot", "helmet_slot", "body_armor_slot",
+                "leg_armor_slot", "boots_slot", "ring1_slot", "ring2_slot",
+                "amulet_slot", "artifact1_slot", "artifact2_slot", "artifact3_slot"
+            ]
+        hero = Character(
+            name=char.get("name"),
+            position=[char.get("x"), char.get("y")],
+            equipment={slot: char.get(slot, "") for slot in slot_keys}
+        )
+        await hero.toggle_equiped(item="wooden_staff")
 
-        return
 
 if __name__ == "__main__":
     asyncio.run(create_instance())
