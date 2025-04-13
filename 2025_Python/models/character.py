@@ -3,6 +3,7 @@ import requests
 from decorators import check_character_position
 import asyncio
 from data import locations
+from typing import Optional
 
 
 class Character():
@@ -42,10 +43,10 @@ class Character():
         return response.status_code
 
     @check_character_position
-    async def fight(self, monster: str) -> int:
-        url, headers = get_url(character=self.name, action="fight", location=monster)
+    async def fight(self, location: str) -> int:
+        url, headers = get_url(character=self.name, action="fight", location=location)
         response = requests.post(url=url, headers=headers)
-        print(f"{self.name} has fought {monster}")
+        print(f"{self.name} has fought {location}")
         await self.handle_cooldown(response)
         print(response.text)
         return response.status_code
@@ -59,12 +60,11 @@ class Character():
         return response.status_code
 
     @check_character_position
-    async def gather(self, resource: str) -> int:
+    async def gather(self, location: str) -> int:
         url, headers = get_url(character=self.name, action="gather")
         response = requests.post(url=url, headers=headers)
-        print(f"{self.name} has gathered {resource}")
+        print(f"{self.name} has gathered from {location}")
         await self.handle_cooldown(response)
-        print(response.text)
         return response.status_code
 
     def has_equipped(self, item: str):
@@ -106,6 +106,24 @@ class Character():
             # else:
                 # Check necessary resources
                 # gather resources
+
+    @check_character_position
+    async def deposit(self, quantity: int, item: str) -> int:
+        url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action="deposit")
+        response = requests.post(url=url, headers=headers, data=data)
+        print(response.text)
+        print(f"{self.name} has deposited {quantity} {item}")
+        await self.handle_cooldown(response)
+        return response.status_code
+
+    @check_character_position
+    async def withdraw(self, quantity: Optional[int], item: str) -> int:
+        url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action="withdraw")
+        response = requests.post(url=url, headers=headers, data=data)
+        print(response.text)
+        print(f"{self.name} has withdrawn {quantity} {item}")
+        await self.handle_cooldown(response)
+        return response.status_code
 
     def __repr__(self):
         return self.name

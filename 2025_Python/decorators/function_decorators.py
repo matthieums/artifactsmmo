@@ -7,16 +7,20 @@ def check_character_position(f):
     requested action. If not, he is moved to the necessary position"""
     @wraps(f)
     async def wrapper(self, *args, **kwargs):
-        if args:
-            required_position = args[-1]
+        required_position = kwargs.get("location")
 
-            if self.position != locations[required_position]:
-                await self.move_to(required_position)
+        func_name = f.__name__
+        if func_name in ["deposit", "withdraw"]:
+            required_position = "bank"
 
-            if inspect.iscoroutinefunction(f):
-                return await f(self, *args, **kwargs)
-            else:
-                return f(self, *args, **kwargs)
+        if not required_position:
+            raise RuntimeError('Missing location')
+
+        if self.position != locations[required_position]:
+            await self.move_to(required_position)
+
+        if inspect.iscoroutinefunction(f):
+            return await f(self, *args, **kwargs)
         else:
-            raise RuntimeError
+            return f(self, *args, **kwargs)
     return wrapper

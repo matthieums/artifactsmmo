@@ -26,7 +26,8 @@ async def create_instance():
             position=[char.get("x"), char.get("y")],
             equipment={slot: char.get(slot, "") for slot in slot_keys}
         )
-        await hero.toggle_equiped(item="wooden_staff")
+        while True:
+            await hero.gather(location="copper_rocks")
 
 
 if __name__ == "__main__":
