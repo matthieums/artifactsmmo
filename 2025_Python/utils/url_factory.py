@@ -73,6 +73,11 @@ def get_url(
         json_data = json.dumps(data)
         return url, headers, json_data
 
+    elif action == "char_data":
+        headers = build_headers(GET)
+        url = f"{BASE_URL}/my/characters"
+        return url, headers
+
 
 def build_headers(request: str) -> dict:
     if request == POST:

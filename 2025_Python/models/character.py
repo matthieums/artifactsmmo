@@ -15,6 +15,21 @@ class Character():
         self.equipment = equipment
         self.inventory = inventory
 
+    @classmethod
+    def from_api_data(cls, data: dict) -> "Character":
+        slot_keys = [
+            "weapon_slot", "shield_slot", "helmet_slot", "body_armor_slot",
+            "leg_armor_slot", "boots_slot", "ring1_slot", "ring2_slot",
+            "amulet_slot", "artifact1_slot", "artifact2_slot", "artifact3_slot"
+        ]
+
+        return cls(
+            name=data.get("name"),
+            position=[data.get("x"), data.get("y")],
+            equipment={slot: data.get(slot, "") for slot in slot_keys },
+            inventory={item["code"]: item["quantity"] for item in data["inventory"] if item["quantity"] > 0}
+        )
+
     @staticmethod
     async def handle_cooldown(data: dict) -> None:
         json_data = data.json()
@@ -40,9 +55,9 @@ class Character():
         url, headers, data = get_url(character=self.name, action="move", location=location)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
-        print(f"{self.name} has moved to {location}...")
-        await self.handle_cooldown(response)
-        return response.status_code
+            print(f"{self.name} has moved to {location}...")
+            await self.handle_cooldown(response)
+            return response.status_code
 
     @check_character_position
     async def fight(self, location: str) -> int:
@@ -76,7 +91,7 @@ class Character():
     def has_equipped(self, item: str):
         return item in self.equipment.values()
 
-    async def toggle_equiped(self, item: str) -> int:
+    async def toggle_equipped(self, item: str) -> int:
         # TODO: Check if already unequipped
         item_data = await self.get_information_about(item)
         slot = item_data["data"]["type"]
@@ -101,18 +116,11 @@ class Character():
             await self.move_to(skill)
 
         url, headers, data = get_url(character=self.name, action="craft", item=item)
-        response = requests.post(url=url, headers=headers, data=data)
-        print(response.text)
-        await self.handle_cooldown(response)
-        return response.status_code
-
-        # used to craft it
-            # if enough resources:
-                # await move to appropriate station
-                # craft item
-            # else:
-                # Check necessary resources
-                # gather resources
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url=url, headers=headers, data=data)
+            print(response.text)
+            await self.handle_cooldown(response)
+            return response.status_code
 
     @check_character_position
     async def deposit(self, quantity: int, item: str) -> int:
