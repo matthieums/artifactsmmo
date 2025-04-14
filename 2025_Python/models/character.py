@@ -34,7 +34,7 @@ class Character():
     async def handle_cooldown(data: dict) -> None:
         json_data = data.json()
         cooldown = json_data["data"]["cooldown"]["total_seconds"]
-        remaining = cooldown + 1
+        remaining = cooldown
 
         while remaining > 0:
             print(f"Cooldown remaining: {remaining} seconds")
@@ -56,8 +56,13 @@ class Character():
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
             print(f"{self.name} has moved to {location}...")
+            self.update_position(location)
             await self.handle_cooldown(response)
             return response.status_code
+
+    def update_position(self, location):
+        self.position = locations[location]
+
 
     @check_character_position
     async def fight(self, location: str) -> int:
@@ -66,7 +71,6 @@ class Character():
             response = await client.post(url=url, headers=headers)
         print(f"{self.name} has fought {location}")
         await self.handle_cooldown(response)
-        print(response.text)
         return response.status_code
 
     async def rest(self):
@@ -83,7 +87,6 @@ class Character():
         url, headers = get_url(character=self.name, action="gather")
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers)
-            print(response.text)
             print(f"{self.name} has gathered from {location}")
             await self.handle_cooldown(response)
             return response.status_code
@@ -126,7 +129,7 @@ class Character():
     async def deposit(self, quantity: int, item: str) -> int:
         if item not in self.inventory:
             return 0
-
+    
         deposit_amount = self.inventory[item] - quantity
 
         url, headers, data = get_url(character=self.name, item=item, quantity=deposit_amount, action="deposit")

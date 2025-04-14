@@ -7,7 +7,7 @@ from utils import get_url
 ######### This is where the process starts and makes calls to create the characters and distribute tasks
 
 
-async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs) :
+async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs):
 
     method = getattr(character, method_name)
 
@@ -38,6 +38,8 @@ async def create_instance():
         f = "fight"
         c_r = "copper_rocks"
         a_w = "ash_wood"
+        a_t = "ash_tree"
+        c = "chickens"
 
         # For individual commands
         # await asyncio.gather(
@@ -52,7 +54,7 @@ async def create_instance():
         # When I need everyone to do the same thing
         tasks = []
         for i in range(len(characters)):
-            tasks.append(run_character_loop(None, characters[i], g, location=c_r))
+            tasks.append(run_character_loop(None, characters[i], g, location=a_t))
         await asyncio.gather(*tasks)
 
 
