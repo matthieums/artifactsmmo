@@ -1,1 +1,2 @@
 from .locations import locations
+from .character_constants import SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS

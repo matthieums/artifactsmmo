@@ -40,6 +40,7 @@ async def create_instance():
         a_w = "ash_wood"
         a_t = "ash_tree"
         c = "chickens"
+        r = "rest"
 
         # For individual commands
         # await asyncio.gather(
@@ -54,7 +55,7 @@ async def create_instance():
         # When I need everyone to do the same thing
         tasks = []
         for i in range(len(characters)):
-            tasks.append(run_character_loop(None, characters[i], g, location=a_t))
+            tasks.append(run_character_loop(None, characters[i], g, location=c_r))
         await asyncio.gather(*tasks)
 
 

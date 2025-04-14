@@ -2,32 +2,47 @@ from utils import get_url
 import requests
 from decorators import check_character_position
 import asyncio
-from data import locations
+from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 from typing import Optional
 import httpx
 
 
 class Character():
-    def __init__(self, name: str, position: list, equipment: dict, inventory: dict) -> None:
-        self.available = True
-        self.position = position
+    def __init__(
+        self,
+        name: str,
+        hp: dict,
+        levels: dict,
+        gold: int,
+        position: list,
+        equipment: dict,
+        inventory: dict,
+        max_items: int,
+        combat: dict
+    ) -> None:
         self.name = name
+        self.hp = hp
+        self.levels = levels
+        self.gold = gold
+        self.position = position
         self.equipment = equipment
         self.inventory = inventory
+        self.max_items = max_items
+        self.combat = combat
+        self.available = True
 
     @classmethod
     def from_api_data(cls, data: dict) -> "Character":
-        slot_keys = [
-            "weapon_slot", "shield_slot", "helmet_slot", "body_armor_slot",
-            "leg_armor_slot", "boots_slot", "ring1_slot", "ring2_slot",
-            "amulet_slot", "artifact1_slot", "artifact2_slot", "artifact3_slot"
-        ]
-
         return cls(
             name=data.get("name"),
+            gold=data.get("gold"),
+            levels={key: data.get(key) for key in XP_KEYS},
             position=[data.get("x"), data.get("y")],
-            equipment={slot: data.get(slot, "") for slot in slot_keys },
-            inventory={item["code"]: item["quantity"] for item in data["inventory"] if item["quantity"] > 0}
+            hp={stat: data.get(stat) for stat in HP_KEYS},
+            equipment={slot: data.get(slot, "") for slot in SLOT_KEYS},
+            inventory={item["code"]: item["quantity"] for item in data.get("inventory", []) if item["quantity"] > 0},
+            max_items=data.get("inventory_max_items"),
+            combat={stat: data.get(stat) for stat in COMBAT_KEYS}
         )
 
     @staticmethod
@@ -62,7 +77,6 @@ class Character():
 
     def update_position(self, location):
         self.position = locations[location]
-
 
     @check_character_position
     async def fight(self, location: str) -> int:
