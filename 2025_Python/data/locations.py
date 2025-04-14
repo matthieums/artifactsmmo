@@ -8,5 +8,6 @@ locations = {
     'weaponcrafting': [2, 1],
     'mining': [1, 5],
     'bank': [4, 1],
-    'gearcrafting': [3, 1]
+    'gearcrafting': [3, 1],
+    'woodcutting': [-2, -3]
 }

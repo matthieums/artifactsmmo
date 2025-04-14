@@ -139,19 +139,41 @@ class Character():
             await self.handle_cooldown(response)
             return response.status_code
 
-    @check_character_position
-    async def deposit(self, quantity: int, item: str) -> int:
-        if item not in self.inventory:
-            return 0
-    
-        deposit_amount = self.inventory[item] - quantity
+    def update_inventory(self, item: str, value: int):
+        if value <= 0:
+            del self.inventory[item]
+        self.inventory[item] = value
 
+    @check_character_position
+    async def deposit(self, quantity: int = 0, item: str = None, drop_all: bool = False, keep: list = None) -> int:
+        if drop_all:
+            async with httpx.AsyncClient() as client:
+                for item in self.inventory:
+                    if keep and item in keep:
+                        continue
+
+                    url, headers, data = get_url(character=self.name, item=item, quantity=self.inventory[item], action="deposit")
+                    response = await client.post(url=url, headers=headers, data=data)
+                    if response.status_code == 200:
+                        print(f"{self.name} has deposited {self.inventory[item]} {item}")
+                        self.update_inventory(item, 0)
+                        await self.handle_cooldown(response)
+                    print("error during deposit")
+            return
+
+        if item not in self.inventory:
+            print(f"There is no {item} to deposit")
+            return 0
+
+        deposit_amount = self.inventory[item] - quantity
         url, headers, data = get_url(character=self.name, item=item, quantity=deposit_amount, action="deposit")
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
-        print(f"{self.name} has deposited {deposit_amount} {item}")
-        await self.handle_cooldown(response)
-        return response.status_code
+            if response.status_code == 200:
+                int(f"{self.name} has deposited {deposit_amount} {item}")
+                await self.handle_cooldown(response)
+                return response.status_code
+            print("error during deposit")
 
     @check_character_position
     async def withdraw(self, quantity: Optional[int], item: str) -> int:

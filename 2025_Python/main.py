@@ -39,24 +39,29 @@ async def create_instance():
         c_r = "copper_rocks"
         a_w = "ash_wood"
         a_t = "ash_tree"
-        c = "chickens"
+        ch = "chickens"
+        cr = "craft"
         r = "rest"
+        a_p = "ash_plank"
+        w_s = "wooden_shield"
+        t_e = "toggle_equipped"
 
         # For individual commands
-        # await asyncio.gather(
-        #     run_character_loop(characters[0], g, location=c_r),
-        #     run_character_loop(characters[1], g, location=c_r),
-        #     run_character_loop(characters[2], g, location=c_r),
-        #     run_character_loop(characters[3], g, location=c_r),
-        #     run_character_loop(characters[4], g, location=c_r),
-        # )
+        await asyncio.gather(
+            run_character_loop(None, characters[0], g, location=c_r ),
+            run_character_loop(None, characters[1], g, location=c_r ),
+            run_character_loop(None, characters[2], g, location=c_r ),
+            run_character_loop(None, characters[3], g, location=c_r ),
+            run_character_loop(None, characters[4], g, location=c_r ),
+            return_exceptions=True
+        )
 
 
         # When I need everyone to do the same thing
         tasks = []
         for i in range(len(characters)):
-            tasks.append(run_character_loop(None, characters[i], g, location=c_r))
-        await asyncio.gather(*tasks)
+            tasks.append(run_character_loop(1, characters[i], d, drop_all=True, keep=["copper_dagger"]))
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":
