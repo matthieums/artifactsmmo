@@ -66,6 +66,22 @@ class Character():
         print(response.text)
         return response.json()
 
+    @staticmethod
+    def detect_error(response):
+        return response.status_code != 200
+
+    @staticmethod
+    def generate_error_message(response, name, action, location):
+        error_detail = response.text
+        print(f"{name} failed to perform {action} at {location}."
+              f"{error_detail}")
+        return 1
+
+    @staticmethod
+    def generate_success_message(name, action, location):
+        print(f"{name} has {action}ed at {location}")
+        return 1
+
     async def move_to(self, location: str) -> int:
         url, headers, data = get_url(character=self.name, action="move", location=location)
         async with httpx.AsyncClient() as client:
@@ -98,13 +114,26 @@ class Character():
 
     @check_character_position
     async def gather(self, location: str) -> int:
-        url, headers = get_url(character=self.name, action="gather")
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers)
-            print(f"{self.name} has gathered from {location}")
-            await self.handle_cooldown(response)
-            return response.status_code
-    
+        action = "gather"
+        url, headers = get_url(character=self.name, action=action)
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url=url, headers=headers)
+                if self.detect_error(response):
+                    self.generate_error_message(response, self.name, action, location)
+                    await self.handle_cooldown(response)
+                    return 0
+                else:
+                    self.generate_success_message(self.name, action, location)
+                    await self.handle_cooldown(response)
+                    return 1
+
+        except httpx.RequestError as exc:
+            print(f"An error occurred while requesting {action}."
+                  f"{exc.request.url!r}: {str(exc)}")
+            return 0
+
     def has_equipped(self, item: str):
         return item in self.equipment.values()
 
