@@ -168,13 +168,21 @@ class Character():
             await self.handle_cooldown(response)
             return response.status_code
 
-    def update_inventory(self, item: str, value: int):
-        if value <= 0:
-            del self.inventory[item]
-        self.inventory[item] = value
+    def update_inventory(self, action: str, item: str, value: int):
+        if action in ["deposit", "empty_inventory"]:
+            self.inventory[item] -= value
+            if value <= 0:
+                del self.inventory[item]
+            print(f"{value} {item} removed from {self.name}'s inventory")
+        elif action == "withdraw":
+            self.inventory[item] = self.inventory.get(item, 0) + value
+            print(f"{value} {item} added to {self.name} inventory")
+        else:
+            print("action need to be added to update inventory")
 
     @check_character_position
     async def empty_inventory(self, keep: list = None):
+        action = "empty_inventory"
         async with httpx.AsyncClient() as client:
             for item in self.inventory:
                 if keep and item in keep:
@@ -183,33 +191,38 @@ class Character():
                 response = await client.post(url=url, headers=headers, data=data)
                 if response.status_code == 200:
                     print(f"{self.name} has deposited {self.inventory[item]} {item}")
-                    self.update_inventory(item, 0)
+                    self.update_inventory(action, item, self.inventory[item])
                     await self.handle_cooldown(response)
         return
 
     @check_character_position
-    async def deposit(self, quantity: int = 0, item: str = None) -> int:
+    async def deposit(self, quantity: int = None, item: str = None) -> int:
+        action = "deposit"
         if item not in self.inventory:
             print(f"There is no {item} to deposit")
             return 0
 
-        deposit_amount = self.inventory[item] - quantity
+        deposit_amount = quantity if quantity else self.inventory[item]
+
+        if deposit_amount > self.inventory[item]:
+            deposit_amount = self.inventory[item]
+
         url, headers, data = get_url(character=self.name, item=item, quantity=deposit_amount, action="deposit")
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
             if response.status_code == 200:
-                int(f"{self.name} has deposited {deposit_amount} {item}")
+                self.update_inventory(action, item, deposit_amount)
                 await self.handle_cooldown(response)
                 return response.status_code
             print("error during deposit")
 
     @check_character_position
     async def withdraw(self, quantity: Optional[int], item: str) -> int:
-        url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action="withdraw")
+        action = "withdraw"
+        url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action=action)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
-        print(response.text)
-        print(f"{self.name} has withdrawn {quantity} {item}")
+        self.update_inventory(action, item, quantity)
         await self.handle_cooldown(response)
         return response.status_code
 
