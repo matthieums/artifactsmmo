@@ -1,5 +1,5 @@
 from functools import wraps
-from data import locations
+from data import locations, bank_actions
 import inspect
 
 def check_character_position(f):
@@ -10,7 +10,7 @@ def check_character_position(f):
         required_position = kwargs.get("location")
 
         func_name = f.__name__
-        if func_name in ["deposit", "withdraw"]:
+        if func_name in bank_actions:
             required_position = "bank"
 
         if not required_position:

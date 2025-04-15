@@ -63,7 +63,7 @@ def get_url(
         url = f"{BASE_URL}/items/{item}"
         return url, headers
 
-    elif action in ["withdraw", "deposit"]:
+    elif action in ["withdraw", "deposit", "empty_inventory"]:
         headers = build_headers(POST)
         url = f"{BASE_URL}/my/{character}/action/bank/{action}"
         data = {

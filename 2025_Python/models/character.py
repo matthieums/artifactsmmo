@@ -104,7 +104,7 @@ class Character():
             print(f"{self.name} has gathered from {location}")
             await self.handle_cooldown(response)
             return response.status_code
-
+    
     def has_equipped(self, item: str):
         return item in self.equipment.values()
 
@@ -145,22 +145,21 @@ class Character():
         self.inventory[item] = value
 
     @check_character_position
-    async def deposit(self, quantity: int = 0, item: str = None, drop_all: bool = False, keep: list = None) -> int:
-        if drop_all:
-            async with httpx.AsyncClient() as client:
-                for item in self.inventory:
-                    if keep and item in keep:
-                        continue
+    async def empty_inventory(self, keep: list = None):
+        async with httpx.AsyncClient() as client:
+            for item in self.inventory:
+                if keep and item in keep:
+                    continue
+                url, headers, data = get_url(character=self.name, item=item, quantity=self.inventory[item], action="deposit")
+                response = await client.post(url=url, headers=headers, data=data)
+                if response.status_code == 200:
+                    print(f"{self.name} has deposited {self.inventory[item]} {item}")
+                    self.update_inventory(item, 0)
+                    await self.handle_cooldown(response)
+        return
 
-                    url, headers, data = get_url(character=self.name, item=item, quantity=self.inventory[item], action="deposit")
-                    response = await client.post(url=url, headers=headers, data=data)
-                    if response.status_code == 200:
-                        print(f"{self.name} has deposited {self.inventory[item]} {item}")
-                        self.update_inventory(item, 0)
-                        await self.handle_cooldown(response)
-                    print("error during deposit")
-            return
-
+    @check_character_position
+    async def deposit(self, quantity: int = 0, item: str = None) -> int:
         if item not in self.inventory:
             print(f"There is no {item} to deposit")
             return 0
