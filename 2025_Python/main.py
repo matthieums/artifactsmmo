@@ -62,7 +62,7 @@ async def create_instance():
         # When I need everyone to do the same thing
         tasks = []
         for i in range(len(characters)):
-            tasks.append(run_character_loop(1, characters[i], e_i))
+            tasks.append(run_character_loop(None, characters[i], f, location="chickens"))
         await asyncio.gather(*tasks, return_exceptions=True)
 
 

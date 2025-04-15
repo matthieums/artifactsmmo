@@ -82,6 +82,37 @@ class Character():
         print(f"{name} has {action}ed at {location}")
         return 1
 
+    def hp_diff(self, previous, current):
+        return previous - current
+
+    def update_gold(self, action, quantity):
+        if action == "gain":
+            self.gold += quantity
+            print(f"{quantity} gold added to {self.name}")
+        elif action == "lose":
+            self.gold -= quantity
+            print(f"{quantity} gold removed from {self.name}")
+
+    def update_hp(self, value):
+        hp_difference = self.hp_diff(self.hp["hp"], value)
+        if hp_difference > 0:
+            print(f"{self.name} lost {hp_difference} hp")
+        elif hp_difference < 0:
+            print(f"{self.name} gained {hp_difference} hp")
+        else:
+            print("no hp gain nor loss")
+
+    def handle_fight_data(self, response):
+        data = response["data"]["fight"]
+        print(f"{self.name} {data['result']}")
+        if data["gold"]:
+            self.update_gold("gain", data["gold"])
+            print(f"{data['gold']} gold received")
+        for item in data["drops"]:
+            self.update_inventory("looted", item, data["drops"][item])
+        self.update_hp(response["data"]["character"]["hp"])
+        return 1
+
     async def move_to(self, location: str) -> int:
         url, headers, data = get_url(character=self.name, action="move", location=location)
         async with httpx.AsyncClient() as client:
@@ -96,12 +127,16 @@ class Character():
 
     @check_character_position
     async def fight(self, location: str) -> int:
+        LOW_HP_THRESHOLD = 0.2
+        if self.hp["hp"] < (LOW_HP_THRESHOLD * self.hp["max_hp"]):
+            await self.rest()
         url, headers = get_url(character=self.name, action="fight", location=location)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers)
-        print(f"{self.name} has fought {location}")
-        await self.handle_cooldown(response)
-        return response.status_code
+            print(f"{self.name} has fought {location}")
+            self.handle_fight_data(response.json())
+            await self.handle_cooldown(response)
+            return response.status_code
 
     async def rest(self):
         url, headers = get_url(character=self.name, action="rest")
@@ -174,7 +209,7 @@ class Character():
             if value <= 0:
                 del self.inventory[item]
             print(f"{value} {item} removed from {self.name}'s inventory")
-        elif action == "withdraw":
+        elif action in ["looted", "withdraw"]:
             self.inventory[item] = self.inventory.get(item, 0) + value
             print(f"{value} {item} added to {self.name} inventory")
         else:
