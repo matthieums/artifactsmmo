@@ -126,6 +126,7 @@ class Character():
         LOW_HP_THRESHOLD = 0.5
         if self.hp["hp"] < (LOW_HP_THRESHOLD * self.hp["max_hp"]):
             await self.rest()
+            return await self.fight(location=location)
         url, headers = get_url(character=self.name, action="fight", location=location)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers)
@@ -140,7 +141,6 @@ class Character():
             response = await client.post(url=url, headers=headers)
         print(f"{self.name} has rested")
         await self.handle_cooldown(response)
-        print(response.text)
         return response.status_code
 
     @check_character_position
