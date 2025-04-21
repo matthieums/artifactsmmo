@@ -45,17 +45,11 @@ class Character():
             combat={stat: data.get(stat) for stat in COMBAT_KEYS}
         )
 
-    @staticmethod
-    async def handle_cooldown(data: dict) -> None:
+    async def handle_cooldown(self, data: dict) -> None:
         json_data = data.json()
         cooldown = json_data["data"]["cooldown"]["total_seconds"]
-        remaining = cooldown
-
-        while remaining > 0:
-            print(f"Cooldown remaining: {remaining} seconds")
-            sleep_time = min(5, remaining)
-            await asyncio.sleep(sleep_time)
-            remaining -= sleep_time
+        print(f"{self.name} is on cooldown for {cooldown} seconds...")
+        await asyncio.sleep(cooldown)
         return
 
     @staticmethod
@@ -82,25 +76,23 @@ class Character():
         print(f"{name} has {action}ed at {location}")
         return 1
 
-    def hp_diff(self, previous, current):
-        return previous - current
-
     def update_gold(self, action, quantity):
         if action == "gain":
             self.gold += quantity
-            print(f"{quantity} gold added to {self.name}")
+            print(f"{self.name} received {quantity} gold")
         elif action == "lose":
             self.gold -= quantity
-            print(f"{quantity} gold removed from {self.name}")
+            print(f"{self.name} lost {quantity} gold")
 
     def update_hp(self, value):
-        hp_difference = self.hp_diff(self.hp["hp"], value)
-        if hp_difference > 0:
-            print(f"{self.name} lost {hp_difference} hp")
-        elif hp_difference < 0:
-            print(f"{self.name} gained {hp_difference} hp")
+        if self.hp["hp"] > value:
+            print(f"{self.name} gained {abs(self.hp['hp'] - value)} hp")
+        elif self.hp["hp"] < value:
+            print(f"{self.name} lost {abs(self.hp['hp'] - value)} hp")
         else:
             print("no hp gain nor loss")
+        self.hp["hp"] = value
+        return 1
 
     def handle_fight_data(self, response):
         data = response["data"]["fight"]
@@ -127,7 +119,7 @@ class Character():
 
     @check_character_position
     async def fight(self, location: str) -> int:
-        LOW_HP_THRESHOLD = 0.2
+        LOW_HP_THRESHOLD = 0.5
         if self.hp["hp"] < (LOW_HP_THRESHOLD * self.hp["max_hp"]):
             await self.rest()
         url, headers = get_url(character=self.name, action="fight", location=location)
