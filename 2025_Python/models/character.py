@@ -76,15 +76,17 @@ class Character():
         print(f"{name} has {action}ed at {location}")
         return 1
 
-    def update_gold(self, action, quantity):
-        if action == "gain":
-            self.gold += quantity
+    def update_gold(self, quantity: int) -> int:
+        """Add a negative or positive value to the character's gold count"""
+        if quantity > 0:
             print(f"{self.name} received {quantity} gold")
-        elif action == "lose":
-            self.gold -= quantity
+        elif quantity < 0:
             print(f"{self.name} lost {quantity} gold")
+        self.gold += quantity
+        return 1
 
-    def update_hp(self, value):
+    def update_hp(self, value: int) -> int:
+        """Add a negative or positive value to the character's hp count"""
         if self.hp["hp"] > value:
             print(f"{self.name} gained {abs(self.hp['hp'] - value)} hp")
         elif self.hp["hp"] < value:
@@ -95,13 +97,15 @@ class Character():
         return 1
 
     def handle_fight_data(self, response):
+        possible_results = {"win": "won", "loss": "lost"}
+        print(f"{self.name} has {possible_results[data['result']]} the fight")
         data = response["data"]["fight"]
-        print(f"{self.name} {data['result']}")
-        if data["gold"]:
-            self.update_gold("gain", data["gold"])
-            print(f"{data['gold']} gold received")
+
+        self.update_gold("gain", data["gold"])
+
         for item in data["drops"]:
             self.update_inventory("looted", item, data["drops"][item])
+
         self.update_hp(response["data"]["character"]["hp"])
         return 1
 
