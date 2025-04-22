@@ -1,6 +1,9 @@
 import logging
+from dotenv import load_dotenv
+import os
 
-API_KEY='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6Im1hcnRlbnMubWF0dGhpZXVAaG90bWFpbC5jb20iLCJwYXNzd29yZF9jaGFuZ2VkIjoiIn0.ARDWMe5_tUvMPvrrNR_-tuSAOcr1EWOPruhYFj3u_FY'
+load_dotenv()
+API_KEY = os.getenv("API_TOKEN")
 
 
 def setup_logging():

@@ -227,7 +227,6 @@ class Character():
         else:
             print("action need to be added to update inventory")
 
-
     @check_character_position
     async def empty_inventory(self, keep: list = None):
         action = "empty_inventory"
