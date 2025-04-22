@@ -3,13 +3,15 @@ import httpx
 from models import Character
 import config
 from utils import get_url
-
+import logging
 
 ######### This is where the process starts and makes calls to create the characters and distribute tasks
 
+logger = logging.getLogger(__name__)
+
 async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs):
 
-    print(f"Initializing loop for {character.name}...")
+    logger.info(f"Initializing loop for {character.name}...")
     method = getattr(character, method_name)
 
     if not callable(method):
@@ -17,7 +19,7 @@ async def run_character_loop(iterations: int | None, character, method_name: str
 
     if iterations is None:
         while True:
-            print("calling methods...")
+            logger.info(f"calling method {method_name}")
             await method(*args, **kwargs)
 
     elif isinstance(iterations, int):
@@ -73,7 +75,7 @@ async def create_instance():
         # When I need everyone to do the same thing
         tasks = []
         for i in range(len(characters)):
-            tasks.append(run_character_loop(None, characters[i], f, location=g_s))
+            tasks.append(run_character_loop(None, characters[i], g, location=c_r))
         await asyncio.gather(*tasks, return_exceptions=True)
 
 

@@ -83,15 +83,20 @@ class Character():
         return 1
 
     async def handle_fight_data(self, response):
+        logger.info("handling fight data")
 
+        data = response.json()
         loot = {}
         items = {}
-        data = response.json()
-        logger.info("handling fight data")
         fight_data = data['data']['fight']
+        fight_result = fight_data['result']
 
-        print(f"{self.name} has {fight_data['result']} the fight")
+        if fight_result == "loss":
+            self.update_position("spawn")
+            print(f"{self.name} has died")
+            await self.handle_cooldown(response)
 
+        print(f"{self.name} has won the fight")
         loot["gold"] = self.update_gold(fight_data["gold"])
         logger.info("GOLD updated")
 
@@ -162,6 +167,10 @@ class Character():
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url=url, headers=headers)
+                data = response.json()
+
+                for item in data["data"]["details"]["items"]:
+                    self.update_inventory(action=action, item=item)
                 await self.handle_cooldown(response)
                 return 1
 
@@ -211,9 +220,9 @@ class Character():
                 del self.inventory[item]
             print(f"{value} {item} removed from {self.name}'s inventory")
 
-        elif action in ["looted", "withdraw"]:
+        elif action in ["looted", "withdraw", "gather"]:
             self.inventory.get(item["code"], 0) + item["quantity"]
-            print(f"{item['quantity']} {item['code']} added to {self.name} inventory")
+            print(f"\t{item['quantity']} {item['code']} added to {self.name} inventory")
             return item['code'], item["quantity"]
         else:
             print("action need to be added to update inventory")

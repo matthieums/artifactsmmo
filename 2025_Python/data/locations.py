@@ -1,4 +1,5 @@
 locations = {
+    'spawn': [0, 0],
     'chickens': [0, 1],
     'cows': [0, 2],
     'green_slime': [0, -1],
