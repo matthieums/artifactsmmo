@@ -162,14 +162,8 @@ class Character():
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url=url, headers=headers)
-                if self.detect_error(response):
-                    self.generate_error_message(response, self.name, action, location)
-                    await self.handle_cooldown(response)
-                    return 0
-                else:
-                    self.generate_success_message(self.name, action, location)
-                    await self.handle_cooldown(response)
-                    return 1
+                await self.handle_cooldown(response)
+                return 1
 
         except httpx.RequestError as exc:
             print(f"An error occurred while requesting {action}."

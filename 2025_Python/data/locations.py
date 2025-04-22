@@ -1,6 +1,7 @@
 locations = {
     'chickens': [0, 1],
     'cows': [0, 2],
+    'green_slime': [0, -1],
 
     'ash_tree': [-1, 0],
     'copper_rocks': [2, 0],

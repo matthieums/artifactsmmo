@@ -9,6 +9,7 @@ from utils import get_url
 
 async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs):
 
+    print(f"Initializing loop for {character.name}...")
     method = getattr(character, method_name)
 
     if not callable(method):
@@ -16,6 +17,7 @@ async def run_character_loop(iterations: int | None, character, method_name: str
 
     if iterations is None:
         while True:
+            print("calling methods...")
             await method(*args, **kwargs)
 
     elif isinstance(iterations, int):
@@ -36,6 +38,11 @@ async def create_instance():
         data = response.json()["data"]
         characters = [Character.from_api_data(entry) for entry in data]
 
+        if len(characters) == 5:
+            print("characters succesfully initialized")
+        else:
+            print("Error during character initilalization")
+
         g = "gather"
         d= "deposit"
         w = "withdraw"
@@ -51,6 +58,7 @@ async def create_instance():
         t_e = "toggle_equipped"
         e_i = "empty_inventory"
         c_o = "copper_ore"
+        g_s = "green_slime"
 
         # For individual commands
         # await asyncio.gather(
@@ -62,11 +70,10 @@ async def create_instance():
         #     return_exceptions=True
         # )
 
-
         # When I need everyone to do the same thing
         tasks = []
         for i in range(len(characters)):
-            tasks.append(run_character_loop(None, characters[i], f, location="chickens"))
+            tasks.append(run_character_loop(None, characters[i], f, location=g_s))
         await asyncio.gather(*tasks, return_exceptions=True)
 
 

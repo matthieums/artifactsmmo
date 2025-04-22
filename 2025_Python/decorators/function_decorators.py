@@ -1,12 +1,17 @@
 from functools import wraps
 from data import locations, bank_actions
 import inspect
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def check_character_position(f):
     """Wrapper that checks if character is in the correct position to make the
     requested action. If not, he is moved to the necessary position"""
     @wraps(f)
     async def wrapper(self, *args, **kwargs):
+        logger.info("Wrapper function called")
         required_position = kwargs.get("location")
 
         func_name = f.__name__
@@ -14,6 +19,7 @@ def check_character_position(f):
             required_position = "bank"
 
         if not required_position:
+            logger.error("Triggered missing location error")
             raise RuntimeError('Missing location')
 
         if self.position != locations[required_position]:
