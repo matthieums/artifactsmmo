@@ -4,8 +4,8 @@ from models import Character
 import config
 from utils import get_url
 
-######### This is where the process starts and makes calls to create the characters and distribute tasks
 
+######### This is where the process starts and makes calls to create the characters and distribute tasks
 
 async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs):
 
@@ -17,6 +17,7 @@ async def run_character_loop(iterations: int | None, character, method_name: str
     if iterations is None:
         while True:
             await method(*args, **kwargs)
+
     elif isinstance(iterations, int):
         for _ in range(iterations):
             await method(*args, **kwargs)
@@ -25,6 +26,9 @@ async def run_character_loop(iterations: int | None, character, method_name: str
 
 
 async def create_instance():
+
+    config.setup_logging()
+
     url, headers = get_url(action="char_data")
 
     async with httpx.AsyncClient() as client:

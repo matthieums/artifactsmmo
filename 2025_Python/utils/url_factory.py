@@ -2,10 +2,30 @@ import config
 import json
 from data import locations
 from typing import Optional
+import httpx
+from .feedback import format_action_message, format_error_message
+import logging
+
+logger = logging.getLogger(__name__)
 
 POST = "POST"
 GET = "GET"
 BASE_URL = "https://api.artifactsmmo.com"
+
+
+async def post_character_action(character, action, location=None):
+    url, headers = get_url(character, action, location)
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url=url, headers=headers)
+
+        if not response.is_success:
+            format_error_message(response, character, action, location)
+            print(response.text)
+            raise Exception("Error during API request")
+
+        format_action_message(character, action, location)
+        return response
 
 
 def get_url(

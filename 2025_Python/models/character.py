@@ -1,10 +1,13 @@
-from utils import get_url
-import requests
+from utils import get_url, post_character_action, format_loot_message
 from decorators import check_character_position
 import asyncio
 from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 from typing import Optional
 import httpx
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Character():
@@ -18,7 +21,7 @@ class Character():
         equipment: dict,
         inventory: dict,
         max_items: int,
-        combat: dict
+        combat: dict,
     ) -> None:
         self.name = name
         self.hp = hp
@@ -29,7 +32,6 @@ class Character():
         self.inventory = inventory
         self.max_items = max_items
         self.combat = combat
-        self.available = True
 
     @classmethod
     def from_api_data(cls, data: dict) -> "Character":
@@ -42,12 +44,12 @@ class Character():
             equipment={slot: data.get(slot, "") for slot in SLOT_KEYS},
             inventory={item["code"]: item["quantity"] for item in data.get("inventory", []) if item["quantity"] > 0},
             max_items=data.get("inventory_max_items"),
-            combat={stat: data.get(stat) for stat in COMBAT_KEYS}
+            combat={stat: data.get(stat) for stat in COMBAT_KEYS},
         )
 
-    async def handle_cooldown(self, data: dict) -> None:
-        json_data = data.json()
-        cooldown = json_data["data"]["cooldown"]["total_seconds"]
+    async def handle_cooldown(self, response=None) -> None:
+        data = response.json()
+        cooldown = data["data"]["cooldown"]["total_seconds"]
         print(f"{self.name} is on cooldown for {cooldown} seconds...")
         await asyncio.sleep(cooldown)
         return
@@ -60,22 +62,6 @@ class Character():
         print(response.text)
         return response.json()
 
-    @staticmethod
-    def detect_error(response):
-        return response.status_code != 200
-
-    @staticmethod
-    def generate_error_message(response, name, action, location):
-        error_detail = response.text
-        print(f"{name} failed to perform {action} at {location}."
-              f"{error_detail}")
-        return 1
-
-    @staticmethod
-    def generate_success_message(name, action, location):
-        print(f"{name} has {action}ed at {location}")
-        return 1
-
     def update_gold(self, quantity: int) -> int:
         """Add a negative or positive value to the character's gold count"""
         if quantity > 0:
@@ -83,7 +69,7 @@ class Character():
         elif quantity < 0:
             print(f"{self.name} lost {quantity} gold")
         self.gold += quantity
-        return 1
+        return quantity
 
     def update_hp(self, value: int) -> int:
         """Add a negative or positive value to the character's hp count"""
@@ -96,17 +82,35 @@ class Character():
         self.hp["hp"] = value
         return 1
 
-    def handle_fight_data(self, response):
-        possible_results = {"win": "won", "loss": "lost"}
-        print(f"{self.name} has {possible_results[data['result']]} the fight")
-        data = response["data"]["fight"]
+    async def handle_fight_data(self, response):
 
-        self.update_gold("gain", data["gold"])
+        loot = {}
+        items = {}
+        data = response.json()
+        logger.info("handling fight data")
+        fight_data = data['data']['fight']
 
-        for item in data["drops"]:
-            self.update_inventory("looted", item, data["drops"][item])
+        print(f"{self.name} has {fight_data['result']} the fight")
 
-        self.update_hp(response["data"]["character"]["hp"])
+        loot["gold"] = self.update_gold(fight_data["gold"])
+        logger.info("GOLD updated")
+
+        if fight_data["drops"]:
+            for item in fight_data["drops"]:
+                item_name, quantity = self.update_inventory(action="looted", item=item)
+                items[item_name] = quantity
+            loot["items"] = items
+            logger.info("INVENTORY updated")
+
+        loot["xp"] = fight_data.get("xp")
+
+        self.update_hp(data["data"]["character"]["hp"])
+        logger.info("HP updated")
+
+        format_loot_message(self.name, loot)
+
+        await self.handle_cooldown(response)
+
         return 1
 
     async def move_to(self, location: str) -> int:
@@ -124,24 +128,31 @@ class Character():
     @check_character_position
     async def fight(self, location: str) -> int:
         LOW_HP_THRESHOLD = 0.5
+
         if self.hp["hp"] < (LOW_HP_THRESHOLD * self.hp["max_hp"]):
+            logger.info(f"{self.name} is low on HP, resting before the fight.")
             await self.rest()
-            return await self.fight(location=location)
-        url, headers = get_url(character=self.name, action="fight", location=location)
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers)
-            print(f"{self.name} has fought {location}")
-            self.handle_fight_data(response.json())
-            await self.handle_cooldown(response)
-            return response.status_code
+
+        try:
+            response = await post_character_action(self.name, "fight", location)
+            if response is None:
+                return 1
+
+            await self.handle_fight_data(response)
+            return 1
+
+        except Exception as e:
+            logger.error(f"Error in fight method: {str(e)}")
+            return 1
 
     async def rest(self):
-        url, headers = get_url(character=self.name, action="rest")
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers)
-        print(f"{self.name} has rested")
+        response = await post_character_action(self.name, "rest")
+        if response is None:
+            return 1
+
+        self.hp["hp"] = self.hp["max_hp"]
         await self.handle_cooldown(response)
-        return response.status_code
+        return 1
 
     @check_character_position
     async def gather(self, location: str) -> int:
@@ -199,17 +210,20 @@ class Character():
             await self.handle_cooldown(response)
             return response.status_code
 
-    def update_inventory(self, action: str, item: str, value: int):
+    def update_inventory(self, action: str, item: str, value: int = None):
         if action in ["deposit", "empty_inventory"]:
             self.inventory[item] -= value
             if value <= 0:
                 del self.inventory[item]
             print(f"{value} {item} removed from {self.name}'s inventory")
+
         elif action in ["looted", "withdraw"]:
-            self.inventory[item] = self.inventory.get(item, 0) + value
-            print(f"{value} {item} added to {self.name} inventory")
+            self.inventory.get(item["code"], 0) + item["quantity"]
+            print(f"{item['quantity']} {item['code']} added to {self.name} inventory")
+            return item['code'], item["quantity"]
         else:
             print("action need to be added to update inventory")
+
 
     @check_character_position
     async def empty_inventory(self, keep: list = None):
