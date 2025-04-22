@@ -55,11 +55,10 @@ class Character():
         return
 
     @staticmethod
-    async def get_information_about(item: str) -> dict:
-        url, headers = get_url(action="info", item=item)
+    async def get_item_info(item: str) -> dict:
+        url, headers = get_url(action="item_info", item=item)
         async with httpx.AsyncClient() as client:
             response = await client.get(url=url, headers=headers)
-        print(response.text)
         return response.json()
 
     def update_gold(self, quantity: int) -> int:
@@ -184,7 +183,7 @@ class Character():
 
     async def toggle_equipped(self, item: str) -> int:
         # TODO: Check if already unequipped
-        item_data = await self.get_information_about(item)
+        item_data = await self.get_item_info(item)
         slot = item_data["data"]["type"]
 
         if self.has_equipped(item):
@@ -200,16 +199,35 @@ class Character():
         return response.status_code     
 
     async def craft(self, item: str) -> int:
-        item_data = await self.get_information_about(item)
-        print(item_data)
+        item_data = await self.get_item_info(item)
+
+        # Check if enough resources to build it in the inventory
+        # if not, fetch everything from the bank
+        # if not at the bank, TODO gather in a loop until enough resource of each
+
+        # ingredients = item_data["data"]["craft"]["items"]
+
+        # missing_ingredients = {}
+
+        # for ingredient in ingredients:
+        #     code, quantity = ingredient["code"], ingredient["quantity"]
+        #     if (code in self.inventory and self.inventory[ingredient] >= quantity):
+        #         continue
+        #     missing_ingredients[ingredient["code"]] = ingredient["quantity"]
+
+        # if missing_ingredients:
+        #     for ingredient in missing_ingredients:
+        #         await self.get_resource_info(ingredient)
+        #         await self.gather()
+
         skill = item_data["data"]["craft"]["skill"]
+
         if not self.position == locations[skill]:
             await self.move_to(skill)
 
         url, headers, data = get_url(character=self.name, action="craft", item=item)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
-            print(response.text)
             await self.handle_cooldown(response)
             return response.status_code
 
@@ -264,8 +282,12 @@ class Character():
             print("error during deposit")
 
     @check_character_position
-    async def withdraw(self, quantity: Optional[int], item: str) -> int:
+    async def withdraw(self, item: str, quantity: int = None) -> int:
         action = "withdraw"
+
+        if not quantity:
+            quantity = self.max_items
+
         url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action=action)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)

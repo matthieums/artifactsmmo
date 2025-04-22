@@ -1,6 +1,6 @@
 import asyncio
 import httpx
-from models import Character
+from models import Character, Bank
 import config
 from utils import get_url
 import logging
@@ -10,7 +10,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs):
-
     logger.info(f"Initializing loop for {character.name}...")
     method = getattr(character, method_name)
 
@@ -29,39 +28,55 @@ async def run_character_loop(iterations: int | None, character, method_name: str
         raise ValueError("Iterations must be an int or None")
 
 
-async def create_instance():
-
-    config.setup_logging()
-
+async def initialize_characters():
+    logging.info("Initializing characters...")
     url, headers = get_url(action="char_data")
-
     async with httpx.AsyncClient() as client:
         response = await client.get(url=url, headers=headers)
         data = response.json()["data"]
+        logging.info("Characters initialized.")
         characters = [Character.from_api_data(entry) for entry in data]
-
         if len(characters) == 5:
-            print("characters succesfully initialized")
+            logging.info("characters succesfully initialized")
+            return characters
         else:
-            print("Error during character initilalization")
+            logging.error("Error during character initialization")
+            raise
 
-        g = "gather"
-        d= "deposit"
-        w = "withdraw"
-        f = "fight"
-        cr = "craft"
-        r = "rest"
-        t_e = "toggle_equipped"
 
-        c_r = "copper_rocks"
-        a_w = "ash_wood"
-        a_t = "ash_tree"
-        ch = "chickens"
-        a_p = "ash_plank"
-        w_s = "wooden_shield"
-        e_i = "empty_inventory"
-        c_o = "copper_ore"
-        g_s = "green_slime"
+async def initialize_bank():
+    logging.info("Initializing bank...")
+    bank_data = await Bank.get_bank_details()
+    bank_items = await Bank.get_bank_items()
+    logging.info("Bank initialized.")
+    return Bank.from_api_data(bank_data, bank_items)
+
+
+async def create_instance():
+    config.setup_logging()
+
+    characters = await initialize_characters()
+    bank = await initialize_bank()
+
+    logging.info("initialization complete")
+
+    g = "gather"
+    d= "deposit"
+    w = "withdraw"
+    f = "fight"
+    cr = "craft"
+    r = "rest"
+    t_e = "toggle_equipped"
+
+    c_r = "copper_rocks"
+    a_w = "ash_wood"
+    a_t = "ash_tree"
+    ch = "chickens"
+    a_p = "ash_plank"
+    w_s = "wooden_shield"
+    e_i = "empty_inventory"
+    c_o = "copper_ore"
+    g_s = "green_slime"
 
         # For individual commands
         # await asyncio.gather(
@@ -73,11 +88,11 @@ async def create_instance():
         #     return_exceptions=True
         # )
 
-        # When I need everyone to do the same thing
-        tasks = []
-        for i in range(len(characters)):
-            tasks.append(run_character_loop(None, characters[i], cr, "copper"))
-        await asyncio.gather(*tasks, return_exceptions=True)
+    # When I need everyone to do the same thing
+    tasks = []
+    for character in characters:
+        tasks.append(run_character_loop(None, character, e_i))
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":

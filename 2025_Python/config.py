@@ -8,7 +8,7 @@ API_KEY = os.getenv("API_KEY")
 
 def setup_logging():
     logging.basicConfig(
-        level=logging.ERROR,
+        level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%H:%M:%S"
     )

@@ -78,7 +78,7 @@ def get_url(
         json_data = json.dumps(data)
         return url, headers, json_data
 
-    elif action == "info":
+    elif action == "item_info":
         headers = build_headers(GET)
         url = f"{BASE_URL}/items/{item}"
         return url, headers
@@ -96,6 +96,16 @@ def get_url(
     elif action == "char_data":
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/characters"
+        return url, headers
+
+    elif action == "bank_details":
+        headers = build_headers(GET)
+        url = f"{BASE_URL}/my/bank"
+        return url, headers
+
+    elif action == "bank_items":
+        headers = build_headers(GET)
+        url = f"{BASE_URL}/my/bank/items"
         return url, headers
 
 
