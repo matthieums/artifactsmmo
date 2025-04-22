@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-API_KEY = os.getenv("API_TOKEN")
 
+API_KEY = os.getenv("API_KEY")
 
 def setup_logging():
     logging.basicConfig(

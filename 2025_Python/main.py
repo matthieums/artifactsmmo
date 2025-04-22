@@ -49,15 +49,16 @@ async def create_instance():
         d= "deposit"
         w = "withdraw"
         f = "fight"
+        cr = "craft"
+        r = "rest"
+        t_e = "toggle_equipped"
+
         c_r = "copper_rocks"
         a_w = "ash_wood"
         a_t = "ash_tree"
         ch = "chickens"
-        cr = "craft"
-        r = "rest"
         a_p = "ash_plank"
         w_s = "wooden_shield"
-        t_e = "toggle_equipped"
         e_i = "empty_inventory"
         c_o = "copper_ore"
         g_s = "green_slime"
@@ -75,7 +76,7 @@ async def create_instance():
         # When I need everyone to do the same thing
         tasks = []
         for i in range(len(characters)):
-            tasks.append(run_character_loop(None, characters[i], g, location=c_r))
+            tasks.append(run_character_loop(None, characters[i], cr, "copper"))
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
