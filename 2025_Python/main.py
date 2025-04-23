@@ -10,25 +10,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs):
-    logger.info(f"Initializing loop for {character.name}...")
-    method = getattr(character, method_name)
-
-    if not callable(method):
-        raise AttributeError(f"'{method_name} is not a valid method")
-
-    if iterations is None:
-        while True:
-            logger.info(f"calling method {method_name}")
-            await method(*args, **kwargs)
-
-    elif isinstance(iterations, int):
-        for _ in range(iterations):
-            await method(*args, **kwargs)
-    else:
-        raise ValueError("Iterations must be an int or None")
-
-
 async def initialize_characters():
     logging.info("Initializing characters...")
     url, headers = get_url(action="char_data")
@@ -94,8 +75,9 @@ async def create_instance():
     # When I need everyone to do the same thing
     tasks = []
     for character in characters:
-        tasks.append(run_character_loop(None, character, g, location=c_r))
-    await asyncio.gather(*tasks, return_exceptions=True)
+        character.build_task(None, g, location=c_r)
+        tasks.append(character.run_tasks())
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":

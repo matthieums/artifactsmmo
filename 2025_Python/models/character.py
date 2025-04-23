@@ -2,11 +2,10 @@ from utils import get_url, post_character_action, format_loot_message
 from decorators import check_character_position
 import asyncio
 from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
-from typing import Optional
 import httpx
 import logging
 from collections import deque
-
+from models import Task
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +65,19 @@ class Character():
     def enqueue_task(self, task):
         self.task_queue.append(task)
 
+    def build_task(self, iterations: int | None, method_name: str, *args, **kwargs):
+        method = getattr(self, method_name, None)
+
+        if not callable(method):
+            raise AttributeError(f"'{method_name} is not a valid method")
+
+        task = Task(method, *args, iterations=iterations, **kwargs)
+        self.enqueue_task(task)
+
+    async def run_tasks(self):
+        while self.task_queue:
+            task = self.task_queue.popleft()
+            await task.run()
 
     def update_gold(self, quantity: int) -> int:
         """Add a negative or positive value to the character's gold count"""
