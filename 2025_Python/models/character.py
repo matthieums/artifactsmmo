@@ -257,6 +257,7 @@ class Character():
             print(f"{value} {item} removed from {self.name}'s inventory")
 
         elif action in ["looted", "withdraw", "gather"]:
+            self.inventory[item["code"]] = self.inventory.get(item["code"], 0) + item["quantity"]
             self.inventory.get(item["code"], 0) + item["quantity"]
             print(f"\t{item['quantity']} {item['code']} added to {self.name} inventory")
             return item['code'], item["quantity"]
