@@ -5,6 +5,7 @@ from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 from typing import Optional
 import httpx
 import logging
+from collections import deque
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class Character():
         self.inventory = inventory
         self.max_items = max_items
         self.combat = combat
+        self.task_queue = deque()
 
     @classmethod
     def from_api_data(cls, data: dict) -> "Character":
@@ -60,6 +62,10 @@ class Character():
         async with httpx.AsyncClient() as client:
             response = await client.get(url=url, headers=headers)
         return response.json()
+
+    def enqueue_task(self, task):
+        self.task_queue.append(task)
+
 
     def update_gold(self, quantity: int) -> int:
         """Add a negative or positive value to the character's gold count"""

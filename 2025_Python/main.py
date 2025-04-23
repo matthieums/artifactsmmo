@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 async def run_character_loop(iterations: int | None, character, method_name: str, *args, **kwargs):
     logger.info(f"Initializing loop for {character.name}...")
     method = getattr(character, method_name)
@@ -53,6 +54,7 @@ async def initialize_bank():
 
 
 async def create_instance():
+    logging.info("initialization start...")
     config.setup_logging()
 
     characters = await initialize_characters()
@@ -77,6 +79,7 @@ async def create_instance():
     e_i = "empty_inventory"
     c_o = "copper_ore"
     g_s = "green_slime"
+    co = "copper"
 
         # For individual commands
         # await asyncio.gather(
@@ -91,7 +94,7 @@ async def create_instance():
     # When I need everyone to do the same thing
     tasks = []
     for character in characters:
-        tasks.append(run_character_loop(None, character, e_i))
+        tasks.append(run_character_loop(None, character, g, location=c_r))
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
