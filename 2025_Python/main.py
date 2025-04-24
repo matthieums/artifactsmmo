@@ -73,12 +73,18 @@ async def create_instance():
         # )
 
     # When I need everyone to do the same thing
-    tasks = []
-    for character in characters:
-        character.build_task(None, g, location=c_r)
-        tasks.append(character.run_tasks())
-    await asyncio.gather(*tasks)
 
+    async with asyncio.TaskGroup() as tg:
+        for character in characters:
+            character.build_task(None, e_i)
+            character.build_task(None, g, location=c_r)
+            character.build_task(None, cr, co)
+            character.build_task(None, e_i)
+            character.build_task(None, g, location=c_r)
+            character.build_task(None, cr, co)
+            character.build_task(None, e_i)
+
+            tg.create_task(character.run_tasks())
 
 if __name__ == "__main__":
     asyncio.run(create_instance())
