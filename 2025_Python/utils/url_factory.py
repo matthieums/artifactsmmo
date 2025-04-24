@@ -19,13 +19,12 @@ async def post_character_action(character, action, location=None):
     async with httpx.AsyncClient() as client:
         response = await client.post(url=url, headers=headers)
 
-        if not response.is_success:
-            format_error_message(response, character, action, location)
-            print(response.text)
-            raise Exception("Error during API request")
+        if response.is_success:
+            format_action_message(character, action, location)
 
-        format_action_message(character, action, location)
         return response
+
+
 
 
 def get_url(
