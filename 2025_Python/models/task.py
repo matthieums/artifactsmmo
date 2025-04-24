@@ -15,7 +15,7 @@ class Task:
                     await self.method(*self.args, **self.kwargs)
                 self.completed = True
             except Exception as e:
-                print(f"Exception occurred during task.run(): {e!r}")
+                print(f"Exception occurred during task.run(): {e}")
                 return
 
         while not self.completed:

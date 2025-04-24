@@ -4,8 +4,10 @@ def format_action_message(character, action, location):
 
 
 def format_error_message(response, character, action, location):
-    print(f"{character} could not perform '{action}'. FAILED at {location}. Status: {response.status_code}")
-    return 1
+    print(f"{character} could not perform '{action}'. FAILED at {location}.")
+    print(f"Status: {response.status_code}")
+    print(response.text)
+    raise Exception("Unidentified error during gather() request")
 
 
 def format_loot_message(character, loot: dict):

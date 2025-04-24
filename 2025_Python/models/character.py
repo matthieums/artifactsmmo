@@ -6,7 +6,7 @@ import httpx
 import logging
 from collections import deque
 from models import Task
-
+from errors import CharacterActionError
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,6 @@ class Character():
         url, headers, data = get_url(character=self.name, action="move", location=location)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
-            print(response.text)
             if response.status_code == 200:
                 print(f"{self.name} has moved to {location}...")
                 self.update_position(location)
@@ -191,27 +190,32 @@ class Character():
 
     @check_character_position
     async def gather(self, location: str) -> int:
+        # TODO: Faire une liste des errors dont j'ai besoin
+        # Pour rendre le code plus parlant
+        INVENTORY_FULL = 497
         action = "gather"
-        url, headers = get_url(character=self.name, action=action)
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url=url, headers=headers)
-
-                if response.status_code == 497: # status code for full inventory
-                    return 1
-
-                data = response.json()
-
-                for item in data["data"]["details"]["items"]:
-                    self.update_inventory(action=action, item=item)
-                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-                return
-
-        except httpx.RequestError as exc:
-            print(f"An error occurred while requesting {action}."
-                  f"{exc.request.url!r}: {str(exc)}")
+            response = await post_character_action(self.name, action, location)
+        except Exception as e:
+            logging.error(f"Action '{action}' failed for {self.name} at {location}. \n{e}")
             return 0
+
+        # Write success message in the tak class?
+        if response.is_success:
+            data = response.json()
+
+            for item in data["data"]["details"]["items"]:
+                self.update_inventory(action=action, item=item)
+            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            return
+
+        elif not response.is_success:
+            if response.status_code == INVENTORY_FULL:
+                return 1
+            else:
+                raise CharacterActionError(response, self.name, action, location)
+
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()

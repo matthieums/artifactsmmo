@@ -17,15 +17,15 @@ async def post_character_action(character, action, location=None):
     url, headers = get_url(character, action, location)
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url=url, headers=headers)
-
-        if response.is_success:
-            format_action_message(character, action, location)
-
-        return response
-
-
-
+        try:
+            response = await client.post(url=url, headers=headers)
+        except Exception as e:
+            logging.error(f"Failed to build or send post request. \n{e}", exc_info=True)
+            return 0
+        else:
+            if response.is_success:
+                format_action_message(character, action, location)
+            return response
 
 def get_url(
         character: Optional[str] = None, action: Optional[str] = None,
