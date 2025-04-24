@@ -11,11 +11,11 @@ class Task:
     async def run(self):
         if self.iterations:
             try:
-                for _ in range(self.iterations + 1):
+                for _ in range(self.iterations):
                     await self.method(*self.args, **self.kwargs)
                 self.completed = True
             except Exception as e:
-                print(e)
+                print(f"Exception occurred during task.run(): {e!r}")
                 return
 
         while not self.completed:
@@ -26,6 +26,6 @@ class Task:
                     print("ACTION COMPLETED WITH SUCCESS")
                     return 1
             except Exception as e:
-                print(e)
+                print(f"Exception occurred during task.run(): {e!r}")
                 return
         return

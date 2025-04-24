@@ -6,7 +6,7 @@ import httpx
 import logging
 from collections import deque
 from models import Task
-from typing import Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,8 @@ class Character():
         self.max_items = max_items
         self.combat = combat
         self.task_queue = deque()
+        self.cooldown_expiration = None
+        self.cooldown_duration = 0
 
     @classmethod
     def from_api_data(cls, data: dict) -> "Character":
@@ -49,10 +51,14 @@ class Character():
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
         )
 
+    def is_on_cooldown(self):
+        return self.cooldown_duration > 0
+
     async def handle_cooldown(self, value: int) -> None:
         cooldown = value
         print(f"{self.name} is on cooldown for {cooldown} seconds...")
         await asyncio.sleep(cooldown)
+        self.cooldown_duration = 0
         return
 
     @staticmethod
@@ -141,11 +147,13 @@ class Character():
         url, headers, data = get_url(character=self.name, action="move", location=location)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
-            print(f"{self.name} has moved to {location}...")
-            self.update_position(location)
-            data = response.json()
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-            return response.status_code
+            print(response.text)
+            if response.status_code == 200:
+                print(f"{self.name} has moved to {location}...")
+                self.update_position(location)
+                data = response.json()
+                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+                return response.status_code
 
     def update_position(self, location):
         self.position = locations[location]
@@ -295,8 +303,7 @@ class Character():
                         await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
                 return 1
         except Exception as e:
-            print(f"Exception occured: {e}")
-            return
+            raise Exception(f"Exception occurred during empty_inventory(): {response.text}") from e
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:
