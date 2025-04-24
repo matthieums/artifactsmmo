@@ -264,9 +264,11 @@ class Character():
     def update_inventory(self, action: str, item: str, value: int = None):
         if action in ["deposit", "empty_inventory"]:
             self.inventory[item] -= value
-            if value <= 0:
+            if self.inventory[item] <= 0:
                 del self.inventory[item]
             print(f"{value} {item} removed from {self.name}'s inventory")
+            if len(self.inventory) == 0:
+                print(f"{self.name}'s inventory is now empty")
 
         elif action in ["looted", "withdraw", "gather"]:
             self.inventory[item["code"]] = self.inventory.get(item["code"], 0) + item["quantity"]
