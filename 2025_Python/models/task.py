@@ -6,11 +6,26 @@ class Task:
         self.args = args
         self.kwargs = kwargs
         self.iterations = iterations
+        self.completed = False
 
     async def run(self):
         if self.iterations:
-            for _ in range(self.iterations + 1):
-                await self.method(*self.args, **self.kwargs)
-        else:
-            while True:
-                await self.method(*self.args, **self.kwargs)
+            try:
+                for _ in range(self.iterations + 1):
+                    await self.method(*self.args, **self.kwargs)
+                self.completed = True
+            except Exception as e:
+                print(e)
+                return
+
+        while not self.completed:
+            try:
+                res = await self.method(*self.args, **self.kwargs)
+                if res == 1:
+                    self.completed = True
+                    print("ACTION COMPLETED WITH SUCCESS")
+                    return 1
+            except Exception as e:
+                print(e)
+                return
+        return
