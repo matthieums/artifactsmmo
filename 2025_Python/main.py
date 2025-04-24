@@ -90,7 +90,6 @@ async def create_instance():
     async with asyncio.TaskGroup() as tg:
         for character in characters:
             if character.is_on_cooldown():
-                print(character.cooldown_duration)
                 character.build_task(1, "handle_cooldown", character.cooldown_duration)
 
             character.build_task(None, e_i)
