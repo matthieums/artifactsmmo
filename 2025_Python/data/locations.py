@@ -1,4 +1,6 @@
 locations = {
+    'test_location' : [786, 899],
+
     'spawn': [0, 0],
     'chickens': [0, 1],
     'cows': [0, 2],

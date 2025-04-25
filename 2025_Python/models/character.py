@@ -188,7 +188,9 @@ class Character():
         await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
         return 1
 
+    @check_character_position
     async def gather(self, location: str) -> int:
+
         INVENTORY_FULL = 497
         action = "gather"
 
@@ -212,7 +214,6 @@ class Character():
                 return 1
             else:
                 raise CharacterActionError(response, self.name, action, location)
-
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()

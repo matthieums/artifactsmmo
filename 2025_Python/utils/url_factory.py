@@ -27,11 +27,12 @@ async def post_character_action(character, action, location=None):
                 format_action_message(character, action, location)
             return response
 
+
 def get_url(
-        character: Optional[str] = None, action: Optional[str] = None,
-        location: Optional[str] = None, item: Optional[str] = None,
-        slot: Optional[str] = None, quantity: Optional[int] = None
-        ) -> tuple:
+    character: Optional[str] = None, action: Optional[str] = None,
+    location: Optional[str] = None, item: Optional[str] = None,
+    slot: Optional[str] = None, quantity: Optional[int] = None
+) -> tuple:
 
     if action == "move":
         headers = build_headers(POST)

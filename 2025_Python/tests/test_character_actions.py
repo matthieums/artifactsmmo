@@ -27,6 +27,7 @@ async def test_handle_cooldown(mock_sleep, test_character):
 @patch("models.character.Character.handle_cooldown")
 async def test_gather_success(mock_handle_cooldown, mock_update_inventory, mock_post_character_action, test_character):
     """Checks if a 2xx response triggers the appropriate functions"""
+    character = test_character
     mock_response = MagicMock()
     mock_response.is_success = True
     item = {"code": "test_item", "quantity": "1"}
@@ -38,13 +39,16 @@ async def test_gather_success(mock_handle_cooldown, mock_update_inventory, mock_
             "cooldown": {"total_seconds": 5}
         }
     }
+
+    location = "test_location"
+    gather = "gather"
+
     mock_post_character_action.return_value.is_success = True
     mock_post_character_action.return_value = mock_response
 
-    location = "TestLocation"
-    gather = "gather"
+    character.position = location
 
-    await test_character.gather(location)
+    await character.gather(location=location)
     mock_post_character_action.assert_called_once_with(test_character.name, gather, location)
     mock_update_inventory.assert_called_once_with(action=gather, item=item)
     mock_handle_cooldown.assert_called_once_with(5)
@@ -56,12 +60,13 @@ async def test_gather_success(mock_handle_cooldown, mock_update_inventory, mock_
 @patch("models.character.Character.handle_cooldown")
 async def test_gather_failure(mock_handle_cooldown, mock_update_inventory, mock_post_character_action, test_character):
     """Checks if 4xx http responses trigger exception"""
-    location = "TestLocation"
-    gather = "gather"
     character = test_character
     mock_post_character_action.side_effect = Exception("Failed to send post request")
 
-    result = await character.gather(location)
+    location = "test_location"
+    gather = "gather"
+    character.position = location
+    result = await character.gather(location=location)
 
     assert result == 0
     mock_post_character_action.assert_called_once_with(character.name, gather, location)
@@ -74,11 +79,13 @@ async def test_gather_failure(mock_handle_cooldown, mock_update_inventory, mock_
 async def test_gather_inventory_full(mock_post_character_action, test_character):
     """Checks if inventory full returns 1"""
     character = test_character
+    location = "test_location"
+    character.position = location
 
     mock_response = MagicMock()
     mock_response.is_success = False
     mock_response.status_code = 497
     mock_post_character_action.return_value = mock_response
 
-    result = await character.gather("TestLocation")
+    result = await character.gather(location=location)
     assert result == 1
