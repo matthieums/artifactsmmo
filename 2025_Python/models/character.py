@@ -188,10 +188,10 @@ class Character():
         await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
         return 1
 
-    @check_character_position
     async def gather(self, location: str) -> int:
         # TODO: Faire une liste des errors dont j'ai besoin
         # Pour rendre le code plus parlant
+
         INVENTORY_FULL = 497
         action = "gather"
 
