@@ -1,6 +1,5 @@
 import asyncio
-import httpx
-from models import Character, Bank
+from models import Character, Bank, Inventory
 import config
 from utils import send_request
 import logging
@@ -15,43 +14,52 @@ logger = logging.getLogger(__name__)
 
 
 async def initialize_characters():
-    logging.info("Initializing characters...")
+    logger.info("Initializing Characters...")
     response = await send_request(action="char_data")
     data = response.json()["data"]
     characters = [Character.from_api_data(entry) for entry in data]
 
     if len(characters) == 5:
-        logging.info("characters succesfully initialized")
+        logger.info("Characters succesfully initialized")
 
     else:
-        logging.error("Error during character initialization")
+        logger.error("Error during character initialization")
         raise
 
     local_tz = get_localzone()
     local_time = datetime.now(local_tz)
 
+    logger.info("Initializing inventory...")
+    logger.info("Setting cooldown values...")
     for i in range(len(characters)):
+        inventory = Inventory.from_data(data[i], characters[i])
+        inventory.owner = characters[i]
+        characters[i].inventory = inventory
         characters[i].cooldown_expiration = parser.isoparse(data[i]["cooldown_expiration"])
         characters[i].cooldown_duration = math.ceil((characters[i].cooldown_expiration - local_time).total_seconds())
+        # TODO: Add error checking
+    logger.info("Inventory initialized.")
+    logger.info("Setting cooldown values.")
+
     return characters
 
 
 async def initialize_bank():
-    logging.info("Initializing bank...")
+    logger.info("Initializing bank...")
     bank_data = await Bank.get_bank_details()
     bank_items = await Bank.get_bank_items()
-    logging.info("Bank initialized.")
+    logger.info("Bank initialized.")
     return Bank.from_api_data(bank_data, bank_items)
 
 
 async def create_instance():
-    logging.info("initialization start...")
+    logger.info("initialization start...")
     config.setup_logging()
 
     characters = await initialize_characters()
     bank = await initialize_bank()
 
-    logging.info("initialization complete")
+    logger.info("Initialization complete.")
 
     g = "gather"
     d= "deposit"
@@ -84,25 +92,25 @@ async def create_instance():
         # )
 
     # When I need everyone to do the same thing
-    async with asyncio.TaskGroup() as tg:
-        for character in characters:
-            if character.is_on_cooldown():
-                character.build_task(1, "handle_cooldown", character.cooldown_duration)
+    # async with asyncio.TaskGroup() as tg:
+    #     for character in characters:
+    #         if character.is_on_cooldown():
+    #             character.build_task(1, "handle_cooldown", character.cooldown_duration)
 
-            character.build_task(None, cr, co)
-            character.build_task(1, w, item=c_o, quantity=100)
-            character.build_task(None, cr, co)
+    #         character.build_task(None, cr, co)
+    #         character.build_task(1, w, item=c_o, quantity=100)
+    #         character.build_task(None, cr, co)
 
-            # character.build_task(None, g, location=i_r)
-            # character.build_task(None, e_i)
-            # character.build_task(None, g, location=i_r)
-            # character.build_task(None, cr, co)
-            # character.build_task(None, e_i)
-            # character.build_task(None, g, location=i_r)
-            # character.build_task(None, cr, co)
-            # character.build_task(None, e_i)
+    #         # character.build_task(None, g, location=i_r)
+    #         # character.build_task(None, e_i)
+    #         # character.build_task(None, g, location=i_r)
+    #         # character.build_task(None, cr, co)
+    #         # character.build_task(None, e_i)
+    #         # character.build_task(None, g, location=i_r)
+    #         # character.build_task(None, cr, co)
+    #         # character.build_task(None, e_i)
 
-            tg.create_task(character.run_tasks())
+    #         tg.create_task(character.run_tasks())
 
 if __name__ == "__main__":
     asyncio.run(create_instance())
