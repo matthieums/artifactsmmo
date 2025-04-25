@@ -6,6 +6,7 @@ locations = {
 
     'ash_tree': [-1, 0],
     'copper_rocks': [2, 0],
+    'iron_rocks': [1, 7],
 
     'weaponcrafting': [2, 1],
     'mining': [1, 5],

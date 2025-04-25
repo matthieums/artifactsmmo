@@ -51,6 +51,13 @@ class Character():
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
         )
 
+    @staticmethod
+    async def get_item_info(item: str) -> dict:
+        url, headers = get_url(action="item_info", item=item)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url=url, headers=headers)
+        return response.json()
+
     def is_on_cooldown(self):
         return self.cooldown_duration > 0
 
@@ -60,13 +67,6 @@ class Character():
         await asyncio.sleep(cooldown)
         self.cooldown_duration = 0
         return
-
-    @staticmethod
-    async def get_item_info(item: str) -> dict:
-        url, headers = get_url(action="item_info", item=item)
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url=url, headers=headers)
-        return response.json()
 
     def enqueue_task(self, task):
         self.task_queue.append(task)
@@ -201,7 +201,7 @@ class Character():
             logging.error(f"Action '{action}' failed for {self.name} at {location}. \n{e}")
             return 0
 
-        # Write success message in the tak class?
+        # Write success message in the task class?
         if response.is_success:
             data = response.json()
 
