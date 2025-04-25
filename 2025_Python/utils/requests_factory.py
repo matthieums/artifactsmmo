@@ -3,7 +3,7 @@ import json
 from data import locations
 from typing import Optional
 import httpx
-from .feedback import format_action_message, format_error_message
+from .feedback import format_action_message
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,22 +13,47 @@ GET = "GET"
 BASE_URL = "https://api.artifactsmmo.com"
 
 
-async def post_character_action(character, action, location=None):
-    url, headers = get_url(character, action, location)
+async def make_post_request(
+        url: str,
+        headers: dict,
+        data: dict | None = None
+        ):
+
+    kwargs = {
+        "url": url,
+        "headers": headers,
+    }
+
+    if data:
+        kwargs["data"] = data
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(url=url, headers=headers)
+            response = await client.post(**kwargs)
         except Exception as e:
             logging.error(f"Failed to build or send post request. \n{e}", exc_info=True)
-            return 0
+            raise e
         else:
-            if response.is_success:
-                format_action_message(character, action, location)
             return response
 
 
-def get_url(
+async def make_get_request(url: str, headers: dict):
+    kwargs = {
+        "url": url,
+        "headers": headers,
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(**kwargs)
+        except Exception as e:
+            logging.error(f"Failed to build or send get request. \n{e}", exc_info=True)
+            raise e
+        else:
+            return response
+
+
+async def send_request(
     character: Optional[str] = None, action: Optional[str] = None,
     location: Optional[str] = None, item: Optional[str] = None,
     slot: Optional[str] = None, quantity: Optional[int] = None
@@ -43,30 +68,32 @@ def get_url(
         }
         json_data = json.dumps(data)
         url = f"{BASE_URL}/my/{character}/action/move"
-        return url, headers, json_data
+        response = await make_post_request(url=url, headers=headers, data=json_data)
 
     elif action == "fight":
         headers = build_headers(POST)
         url = f"{BASE_URL}/my/{character}/action/fight"
-        return url, headers
+        response = await make_post_request(url=url, headers=headers)
 
     elif action == "rest":
         headers = build_headers(POST)
         url = f"{BASE_URL}/my/{character}/action/rest"
-        return url, headers
+        response = await make_post_request(url=url, headers=headers)
 
     elif action == "gather":
         headers = build_headers(POST)
         url = f"{BASE_URL}/my/{character}/action/gathering"
-        return url, headers
+        response = await make_post_request(url=url, headers=headers)
 
     elif action == "craft":
+        if not item:
+            raise Exception("Missing argument: item")
         headers = build_headers(POST)
         data = json.dumps({
             "code": item
         })
         url = f"{BASE_URL}/my/{character}/action/crafting"
-        return url, headers, data
+        response = await make_post_request(url=url, headers=headers, data=data)
 
     elif action in ["equip", "unequip"]:
         headers = build_headers(POST)
@@ -76,12 +103,13 @@ def get_url(
             "slot": slot
         }
         json_data = json.dumps(data)
-        return url, headers, json_data
+        response = await make_post_request(url=url, headers=headers, data=data)
 
     elif action == "item_info":
         headers = build_headers(GET)
         url = f"{BASE_URL}/items/{item}"
-        return url, headers
+        response = await make_get_request(url=url, headers=headers)
+        return response
 
     elif action in ["withdraw", "deposit", "empty_inventory"]:
         headers = build_headers(POST)
@@ -91,22 +119,27 @@ def get_url(
             "quantity": quantity
         }
         json_data = json.dumps(data)
-        return url, headers, json_data
+        response = await make_post_request(url=url, headers=headers, data=data)
 
     elif action == "char_data":
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/characters"
-        return url, headers
+        response = await make_get_request(url=url, headers=headers)
 
     elif action == "bank_details":
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/bank"
-        return url, headers
+        response = await make_get_request(url=url, headers=headers)
 
     elif action == "bank_items":
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/bank/items"
-        return url, headers
+        response = await make_get_request(url=url, headers=headers)
+
+    if response.is_success:
+        format_action_message(character, action, location)
+
+    return response
 
 
 def build_headers(request: str) -> dict:

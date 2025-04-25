@@ -2,7 +2,7 @@ import asyncio
 import httpx
 from models import Character, Bank
 import config
-from utils import get_url
+from utils import send_request
 import logging
 from dateutil import parser
 from tzlocal import get_localzone
@@ -16,27 +16,24 @@ logger = logging.getLogger(__name__)
 
 async def initialize_characters():
     logging.info("Initializing characters...")
-    url, headers = get_url(action="char_data")
+    response = await send_request(action="char_data")
+    data = response.json()["data"]
+    characters = [Character.from_api_data(entry) for entry in data]
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url=url, headers=headers)
-        data = response.json()["data"]
-        characters = [Character.from_api_data(entry) for entry in data]
+    if len(characters) == 5:
+        logging.info("characters succesfully initialized")
 
-        if len(characters) == 5:
-            logging.info("characters succesfully initialized")
+    else:
+        logging.error("Error during character initialization")
+        raise
 
-        else:
-            logging.error("Error during character initialization")
-            raise
+    local_tz = get_localzone()
+    local_time = datetime.now(local_tz)
 
-        local_tz = get_localzone()
-        local_time = datetime.now(local_tz)
-
-        for i in range(len(characters)):
-            characters[i].cooldown_expiration = parser.isoparse(data[i]["cooldown_expiration"])
-            characters[i].cooldown_duration = math.ceil((characters[i].cooldown_expiration - local_time).total_seconds())
-        return characters
+    for i in range(len(characters)):
+        characters[i].cooldown_expiration = parser.isoparse(data[i]["cooldown_expiration"])
+        characters[i].cooldown_duration = math.ceil((characters[i].cooldown_expiration - local_time).total_seconds())
+    return characters
 
 
 async def initialize_bank():
@@ -92,9 +89,11 @@ async def create_instance():
             if character.is_on_cooldown():
                 character.build_task(1, "handle_cooldown", character.cooldown_duration)
 
-            # character.build_task(None, e_i)
-            # character.build_task(None, g, location=i_r)
             character.build_task(None, cr, co)
+            character.build_task(1, w, item=c_o, quantity=100)
+            character.build_task(None, cr, co)
+
+            # character.build_task(None, g, location=i_r)
             # character.build_task(None, e_i)
             # character.build_task(None, g, location=i_r)
             # character.build_task(None, cr, co)

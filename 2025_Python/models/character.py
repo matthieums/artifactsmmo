@@ -1,4 +1,4 @@
-from utils import get_url, post_character_action, format_loot_message
+from utils import send_request, make_post_request, format_loot_message
 from decorators import check_character_position
 import asyncio
 from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
@@ -53,9 +53,7 @@ class Character():
 
     @staticmethod
     async def get_item_info(item: str) -> dict:
-        url, headers = get_url(action="item_info", item=item)
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url=url, headers=headers)
+        response = await send_request(action="item_info", item=item)
         return response.json()
 
     def is_on_cooldown(self):
@@ -144,7 +142,7 @@ class Character():
         return 1
 
     async def move_to(self, location: str) -> int:
-        url, headers, data = get_url(character=self.name, action="move", location=location)
+        url, headers, data = await send_request(character=self.name, action="move", location=location)
         async with httpx.AsyncClient() as client:
             response = await client.post(url=url, headers=headers, data=data)
             if response.status_code == 200:
@@ -166,7 +164,7 @@ class Character():
             await self.rest()
 
         try:
-            response = await post_character_action(self.name, "fight", location)
+            response = await make_post_request(self.name, "fight", location)
             if response is None:
                 return 1
 
@@ -178,15 +176,20 @@ class Character():
             return 1
 
     async def rest(self):
-        response = await post_character_action(self.name, "rest")
-        if response is None:
+        try:
+            response = await make_post_request(self.name, "rest")
+        except Exception as e:
+            logger.error(f"Error in fight method: {str(e)}")
             return 1
+        else:
+            if response is None:
+                return 1
 
-        self.hp["hp"] = self.hp["max_hp"]
+            self.hp["hp"] = self.hp["max_hp"]
 
-        data = response.json()
-        await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-        return 1
+            data = response.json()
+            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            return 1
 
     @check_character_position
     async def gather(self, location: str) -> int:
@@ -195,7 +198,7 @@ class Character():
         action = "gather"
 
         try:
-            response = await post_character_action(self.name, action, location)
+            response = await make_post_request(self.name, action, location)
         except Exception as e:
             logging.error(f"Action '{action}' failed for {self.name} at {location}. \n{e}")
             return 0
@@ -228,43 +231,27 @@ class Character():
         else:
             action = "equip"
 
-        url, headers, data = get_url(character=self.name, action=action, item=item, slot=slot)
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers, data=data)
-        print(response.text)
-        await self.handle_cooldown(response["data"]["cooldown"]["total_seconds"])
-        return response.status_code
+        try:       
+            response = await send_request(character=self.name, action=action, item=item, slot=slot)
+        except Exception as e:
+            logger.error(f"Error in fight method: {str(e)}")
+            return 1
+        else:
+            await self.handle_cooldown(response["data"]["cooldown"]["total_seconds"])
+            return response.status_code
 
     @check_character_position
     async def craft(self, item: str) -> int:
+        action = "craft"
 
-        # Check if enough resources to build it in the inventory
-        # if not, fetch everything from the bank
-        # if not at the bank, TODO gather in a loop until enough resource of each
-
-        # ingredients = item_data["data"]["craft"]["items"]
-
-        # missing_ingredients = {}
-
-        # for ingredient in ingredients:
-        #     code, quantity = ingredient["code"], ingredient["quantity"]
-        #     if (code in self.inventory and self.inventory[ingredient] >= quantity):
-        #         continue
-        #     missing_ingredients[ingredient["code"]] = ingredient["quantity"]
-
-        # if missing_ingredients:
-        #     for ingredient in missing_ingredients:
-        #         await self.get_resource_info(ingredient)
-        #         await self.gather()
-
-        url, headers, data = get_url(character=self.name, action="craft", item=item)
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers, data=data)
-            if response.status_code == 471:
-                return 1
+        try:
+            response = await send_request(character=self.name, action=action, item=item)
+        except Exception as e:
+            logging.error(f"{self.name} failed to craft {item}. \n{e}")
+        else:
             data = response.json()
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-            return response.status_code
+            return 1
 
     def update_inventory(self, action: str, item: str, value: int = None):
         if action in ["deposit", "empty_inventory"]:
@@ -286,21 +273,20 @@ class Character():
     async def empty_inventory(self, keep: list = None):
         action = "empty_inventory"
 
-        try:
-            async with httpx.AsyncClient() as client:
-                for item in list(self.inventory):
-                    if keep and item in keep:
-                        continue
-                    url, headers, data = get_url(character=self.name, item=item, quantity=self.inventory[item], action="deposit")
-                    response = await client.post(url=url, headers=headers, data=data)
-                    if response.status_code == 200:
-                        print(f"{self.name} has deposited {self.inventory[item]} {item}")
-                        self.update_inventory(action, item, self.inventory[item])
-                        data = response.json()
-                        await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+        for item in list(self.inventory):
+            if keep and item in keep:
+                continue
+            try:
+                response = await send_request(character=self.name, item=item, quantity=self.inventory[item], action="deposit")
+            except Exception as e:
+                logger.error(f"Error in empty_inventory method: {str(e)}")
                 return 1
-        except Exception as e:
-            raise Exception(f"Exception occurred during empty_inventory(): {response.text}") from e
+            else:
+                if response.status_code == 200:
+                    print(f"{self.name} has deposited {self.inventory[item]} {item}")
+                    self.update_inventory(action, item, self.inventory[item])
+                    data = response.json()
+                    await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:
@@ -314,14 +300,17 @@ class Character():
         if deposit_amount > self.inventory[item]:
             deposit_amount = self.inventory[item]
 
-        url, headers, data = get_url(character=self.name, item=item, quantity=deposit_amount, action="deposit")
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers, data=data)
+        try:
+            response = await send_request(character=self.name, item=item, quantity=deposit_amount, action=action)
+        except Exception as e:
+            logger.error(f"Error in empty_inventory method: {str(e)}")
+            return 0
+        else:
             if response.status_code == 200:
                 self.update_inventory(action, item, deposit_amount)
                 data = response.json()
                 await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-                return response.status_code
+                return 1
             print("error during deposit")
 
     @check_character_position
@@ -331,13 +320,16 @@ class Character():
         if not quantity:
             quantity = self.max_items
 
-        url, headers, data = get_url(character=self.name, item=item, quantity=quantity, action=action)
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers, data=data)
-        self.update_inventory(action, item, quantity)
-        data = response.json()
-        await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-        return response.status_code
+        try:
+            response = await send_request(character=self.name, item=item, quantity=quantity, action=action)
+        except Exception as e:
+            logging.error(f"{self.name} failed to '{action}'. \n{e}")
+            return 0
+        else:
+            self.update_inventory(action, item, quantity)
+            data = response.json()
+            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            return response.status_code
 
     def __repr__(self):
         return self.name
