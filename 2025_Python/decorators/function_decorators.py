@@ -15,8 +15,13 @@ def check_character_position(f):
         required_position = kwargs.get("location")
 
         func_name = f.__name__
+
         if func_name in bank_actions:
             required_position = "bank"
+
+        elif func_name == "craft":
+            item_data = await self.get_item_info(*args)
+            required_position = item_data["data"]["craft"]["skill"]
 
         if not required_position:
             logger.error("Triggered missing location error")

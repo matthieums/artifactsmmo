@@ -233,10 +233,10 @@ class Character():
             response = await client.post(url=url, headers=headers, data=data)
         print(response.text)
         await self.handle_cooldown(response["data"]["cooldown"]["total_seconds"])
-        return response.status_code     
+        return response.status_code
 
+    @check_character_position
     async def craft(self, item: str) -> int:
-        item_data = await self.get_item_info(item)
 
         # Check if enough resources to build it in the inventory
         # if not, fetch everything from the bank
@@ -256,11 +256,6 @@ class Character():
         #     for ingredient in missing_ingredients:
         #         await self.get_resource_info(ingredient)
         #         await self.gather()
-
-        skill = item_data["data"]["craft"]["skill"]
-
-        if not self.position == locations[skill]:
-            await self.move_to(skill)
 
         url, headers, data = get_url(character=self.name, action="craft", item=item)
         async with httpx.AsyncClient() as client:
