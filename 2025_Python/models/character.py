@@ -189,9 +189,6 @@ class Character():
         return 1
 
     async def gather(self, location: str) -> int:
-        # TODO: Faire une liste des errors dont j'ai besoin
-        # Pour rendre le code plus parlant
-
         INVENTORY_FULL = 497
         action = "gather"
 

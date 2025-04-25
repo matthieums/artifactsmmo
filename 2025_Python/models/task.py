@@ -18,6 +18,8 @@ class Task:
                 for _ in range(self.iterations):
                     await self.method(*self.args, **self.kwargs)
                 self.completed = True
+                self.log_success()
+                return 1
             except Exception as e:
                 print(f"Exception occurred during task.run(): {e}")
                 return
