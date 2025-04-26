@@ -1,14 +1,14 @@
-from errors import InventoryFullError,ItemNotFoundError
+from errors import InventoryFullError, ItemNotFoundError
 
 
 class Inventory:
-    def __init__(self, character: object, slots: dict, max_capacity: int):
-        self.owner = character
+    def __init__(self, owner: object, slots: dict, max_capacity: int):
+        self.owner = owner
         self.slots = slots
         self.max_capacity = max_capacity
 
     @classmethod
-    def from_data(cls, data: dict, character: object):
+    def from_data(cls, data: dict, owner: object):
         return cls(
             slots={
                 item["code"]: item["quantity"]
@@ -16,7 +16,7 @@ class Inventory:
                 if item["quantity"] > 0
                 },
             max_capacity=data.get("inventory_max_items"),
-            character=character
+            owner=owner
         )
 
     def add(self, item, quantity):
