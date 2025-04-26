@@ -2,6 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 import traceback
 
+
 class Task:
     def __init__(self, method: callable, iterations: int | None, *args, **kwargs):
         if not callable(method):
@@ -26,11 +27,7 @@ class Task:
 
         while not self.completed:
             try:
-                res = await self.method(*self.args, **self.kwargs)
-                if res == 1:
-                    self.completed = True
-                    self.log_success()
-                    return 1
+                await self.method(*self.args, **self.kwargs)
             except Exception as e:
                 print(f"Exception occurred during task.run(): {traceback.format_exc()}")
                 return
