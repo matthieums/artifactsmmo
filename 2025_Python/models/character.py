@@ -64,7 +64,7 @@ class Character():
     def enqueue_task(self, task):
         self.task_queue.append(task)
 
-    def build_task(self, iterations: int | None, method_name: str, *args, **kwargs):
+    def add_task(self, iterations: int | None, method_name: str, *args, **kwargs):
         method = getattr(self, method_name, None)
 
         if not callable(method):
@@ -210,6 +210,9 @@ class Character():
             for item in gathered_items:
                 code, qty = item.get("code"), item.get("quantity")
                 self.update_inventory(action=action, item=code, quantity=qty)
+
+            self.add_task(1, "gather", location="iron_rocks")
+
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return
 

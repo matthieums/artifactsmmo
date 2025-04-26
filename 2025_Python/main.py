@@ -95,26 +95,26 @@ async def create_instance():
     async with asyncio.TaskGroup() as tg:
         for character in characters:
             if character.is_on_cooldown():
-                character.build_task(1, "handle_cooldown", character.cooldown_duration)
+                character.add_task(1, "handle_cooldown", character.cooldown_duration)
 
-    
-            # character.build_task(1, e_i)
-            # character.build_task(1, w, item=c_o, quantity=100)
-            # character.build_task(1, cr, co, quantity=10)
-            # character.build_task(1, e_i)
-            # character.build_task(1, w, item=c_o, quantity=100)
-            # character.build_task(1, cr, co, quantity=10)
-            # character.build_task(1, e_i)
-            # character.build_task(1, w, item=c_o, quantity=100)
-            # character.build_task(1, cr, co, quantity=10)
-            # character.build_task(None, cr, co)
+            character.add_task(1, g, location=i_r)
 
-            character.build_task(None, g, location=i_r)
-            # character.build_task(None, g, location=i_r)
-            # character.build_task(None, cr, co)
-            # character.build_task(None, g, location=i_r)
-            # character.build_task(None, cr, co)
-            # character.build_task(None, e_i)
+            # character.add_task(1, e_i)
+            # character.add_task(1, w, item=c_o, quantity=100)
+            # character.add_task(1, cr, co, quantity=10)
+            # character.add_task(1, e_i)
+            # character.add_task(1, w, item=c_o, quantity=100)
+            # character.add_task(1, cr, co, quantity=10)
+            # character.add_task(1, e_i)
+            # character.add_task(1, w, item=c_o, quantity=100)
+            # character.add_task(1, cr, co, quantity=10)
+            # character.add_task(None, cr, co)
+
+            # character.add_task(None, g, location=i_r)
+            # character.add_task(None, cr, co)
+            # character.add_task(None, cr, co)
+            # character.add_task(None, g, location=i_r)
+            # character.add_task(None, e_i)
 
             tg.create_task(character.run_tasks())
 
