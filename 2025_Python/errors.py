@@ -20,3 +20,6 @@ class InventoryFullError(Exception):
 
 class ItemNotFoundError(Exception):
     pass
+
+class ItemNotCraftableError(Exception):
+    pass

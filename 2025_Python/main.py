@@ -97,8 +97,8 @@ async def create_instance():
             if character.is_on_cooldown():
                 character.build_task(1, "handle_cooldown", character.cooldown_duration)
 
-            # character.build_task(None, cr, co)
-            character.build_task(1, w, item=c_o, quantity=100)
+            character.build_task(None, cr, co)
+            # character.build_task(1, w, item=c_o, quantity=100)
             # character.build_task(None, cr, co)
 
             # character.build_task(None, g, location=i_r)

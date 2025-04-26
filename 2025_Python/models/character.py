@@ -1,11 +1,11 @@
-from utils import send_request, make_post_request, format_loot_message
+from utils import send_request, make_post_request, format_loot_message, get_item_info
 from decorators import check_character_position
 import asyncio
 from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import httpx
 import logging
 from collections import deque
-from models import Task, Inventory
+from models import Task, Inventory, Item
 from errors import CharacterActionError
 
 logger = logging.getLogger(__name__)
@@ -50,11 +50,6 @@ class Character():
             max_items=data.get("inventory_max_items"),
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
         )
-
-    @staticmethod
-    async def get_item_info(item: str) -> dict:
-        response = await send_request(action="item_info", item=item)
-        return response.json()
 
     def is_on_cooldown(self):
         return self.cooldown_duration > 0
@@ -227,7 +222,7 @@ class Character():
 
     async def toggle_equipped(self, item: str) -> int:
         # TODO: Check if already unequipped
-        item_data = await self.get_item_info(item)
+        item_data = await get_item_info(item)
         slot = item_data["data"]["type"]
 
         if self.has_equipped(item):
@@ -245,8 +240,8 @@ class Character():
             return response.status_code
 
     @check_character_position
-    async def craft(self, item: str, quantity: int | None) -> int:
-
+    async def craft(self, item: str, quantity: int | None = 1) -> int:
+        action = "craft"
         # TODO: In order:
         # Add number of items wished as optional. If no
         # number, infinite.
@@ -265,22 +260,8 @@ class Character():
         # dispatch resource gathering making calls depending on resource type
         # and amounts I need to craft
 
-        action = "craft"
-
-        item_info = await self.get_item_info(item)
-        recipe = item_info["data"]["craft"]["items"]
-
-        missing_ressource = False
-        for ingredients in recipe:
-            name, amount = ingredients["code"], ingredients["quantity"]
-            if not self.inventory.contains_resources(name, amount):
-                missing_ressource = True
-                value = amount - self.inventory.get(name)
-                print(f"missing resource to craft {item}: {value} {name}")
-
-        if missing_ressource:
-            return 0
-
+        if not await self.can_craft(item, quantity):
+            return
 
         # Update resources in inventory
         try:
@@ -291,6 +272,21 @@ class Character():
             data = response.json()
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return 1
+
+    async def can_craft(self, item: str, amount: int | None):
+        """Checks if character has enough resources to craft the desired
+        amount of items"""
+        item_info = await get_item_info(item)
+        item_object = Item.from_data(item_info["data"])
+        recipe = item_object.get_ingredients()
+
+        for ingredient in recipe:
+            code, qty = ingredient["code"], ingredient["quantity"]
+            if not self.inventory.contains_resources(code, qty):
+                missing_value = qty - self.inventory.get(code)
+                print(f"missing {missing_value} {code} to craft {amount} {item_object}")
+                return False
+        return True
 
     def update_inventory(self, action: str, item: str, value: int | None = None):
         try:
