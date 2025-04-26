@@ -143,7 +143,7 @@ class Character():
 
     async def move_to(self, location: str) -> int:
         try:
-            response = await make_post_request(self.name, "move", location)
+            response = await send_request(self.name, action="move", location=location)
         except Exception as e:
             logger.error(f"Error in move method: {str(e)}")
             return 1
@@ -168,7 +168,7 @@ class Character():
             await self.rest()
 
         try:
-            response = await make_post_request(self.name, "fight", location)
+            response = await send_request(self.name, action="fight", location=location)
             if response is None:
                 return 1
 
@@ -181,7 +181,7 @@ class Character():
 
     async def rest(self):
         try:
-            response = await make_post_request(self.name, "rest")
+            response = await send_request(self.name, action="rest")
         except Exception as e:
             logger.error(f"Error in fight method: {str(e)}")
             return 1
@@ -202,7 +202,7 @@ class Character():
         action = "gather"
 
         try:
-            response = await make_post_request(self.name, action, location)
+            response = await send_request(self.name, action=action, location=location)
         except Exception as e:
             logging.error(f"Action '{action}' failed for {self.name} at {location}. \n{e}")
             return 0
@@ -245,9 +245,44 @@ class Character():
             return response.status_code
 
     @check_character_position
-    async def craft(self, item: str) -> int:
+    async def craft(self, item: str, quantity: int | None) -> int:
+
+        # TODO: In order:
+        # Add number of items wished as optional. If no
+        # number, infinite.
+        # If not enough resources to craft all the items, do I
+        # still craft or do I gather all resources to build everything?
+        # 1. Check if enough resources in the inventory
+        # 2. Check if resources are available in the bank
+        # 3. Check if resources can be gathered or crafted (maybe recursively)
+        # Watch out for inventory space etc. I would need a function to 
+        # forecast what I will need and if I can.
+        # 4. Craft
+        # 5. Update inventory resources
+
+
+        # Get resource, either by querying the bank or creating a function to
+        # dispatch resource gathering making calls depending on resource type
+        # and amounts I need to craft
+
         action = "craft"
 
+        item_info = await self.get_item_info(item)
+        recipe = item_info["data"]["craft"]["items"]
+
+        missing_ressource = False
+        for ingredients in recipe:
+            name, amount = ingredients["code"], ingredients["quantity"]
+            if not self.inventory.contains_resources(name, amount):
+                missing_ressource = True
+                value = amount - self.inventory.get(name)
+                print(f"missing resource to craft {item}: {value} {name}")
+
+        if missing_ressource:
+            return 0
+
+
+        # Update resources in inventory
         try:
             response = await send_request(character=self.name, action=action, item=item)
         except Exception as e:
@@ -330,15 +365,14 @@ class Character():
 
         free_space = self.inventory.free_space()
 
+        # TODO: Check if bank has enough of required items BEFORE moving
+
         # Check if character has enough space for the required item quantity
         if quantity and quantity <= free_space:
             withdraw_amount = quantity
         else:
             withdraw_amount = free_space
             print(f"{self.name} can only withdraw {free_space} at the moment")
-
-        # TODO: Check if bank has enough of required items
-
         try:
             response = await send_request(character=self.name, item=item, quantity=withdraw_amount, action=action)
         except Exception as e:
