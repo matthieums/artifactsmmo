@@ -5,7 +5,7 @@ from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import httpx
 import logging
 from collections import deque
-from models import Task
+from models import Task, Inventory
 from errors import CharacterActionError
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class Character():
         gold: int,
         position: list,
         equipment: dict,
-        inventory: dict,
+        inventory: Inventory,
         max_items: int,
         combat: dict,
     ) -> None:
@@ -46,7 +46,7 @@ class Character():
             position=[data.get("x"), data.get("y")],
             hp={stat: data.get(stat) for stat in HP_KEYS},
             equipment={slot: data.get(slot, "") for slot in SLOT_KEYS},
-            inventory={item["code"]: item["quantity"] for item in data.get("inventory", []) if item["quantity"] > 0},
+            inventory=None,
             max_items=data.get("inventory_max_items"),
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
         )
@@ -253,52 +253,59 @@ class Character():
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return 1
 
-    def update_inventory(self, action: str, item: str, value: int = None):
-        if action in ["deposit", "empty_inventory"]:
-            self.inventory[item] -= value
-            if self.inventory[item] <= 0:
-                del self.inventory[item]
-            print(f"{value} {item} removed from {self.name}'s inventory")
-            if len(self.inventory) == 0:
-                print(f"{self.name}'s inventory is now empty")
+    def update_inventory(self, action: str, item: str, value: int | None = None):
+        try:
+            if action in ["deposit", "empty_inventory"]:
+                self.inventory.remove(item, value)
+                return
 
-        elif action in ["looted", "withdraw", "gather"]:
-            self.inventory[item["code"]] = self.inventory.get(item["code"], 0) + item["quantity"]
-            print(f"\t{item['quantity']} {item['code']} added to {self.name} inventory")
-            return item['code'], item["quantity"]
-        else:
-            print("action need to be added to update inventory")
+            elif action in ["looted", "withdraw", "gather"]:
+                self.inventory.add(item, value)
+                return
+
+            else:
+                raise ValueError(f"Unsupported inventory action: {action}")
+        except Exception as e:
+            logging.error(f"An error occured: {e}")
+            return None
 
     @check_character_position
     async def empty_inventory(self, keep: list = None):
         action = "empty_inventory"
 
-        for item in list(self.inventory):
+        if self.inventory.is_empty():
+            print("Nothing to deposit.")
+
+        for item, quantity in dict(self.inventory.get_inventory()).items():
             if keep and item in keep:
                 continue
             try:
-                response = await send_request(character=self.name, item=item, quantity=self.inventory[item], action="deposit")
+                response = await send_request(character=self.name, item=item, quantity=quantity, action="deposit")
             except Exception as e:
                 logger.error(f"Error in empty_inventory method: {str(e)}")
                 return 1
             else:
                 if response.status_code == 200:
-                    print(f"{self.name} has deposited {self.inventory[item]} {item}")
-                    self.update_inventory(action, item, self.inventory[item])
+                    quantity = self.inventory.get(item)
+                    print(f"{self.name} has deposited {quantity} {item}")
+                    self.update_inventory(action, item)
                     data = response.json()
                     await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:
         action = "deposit"
-        if item not in self.inventory:
+
+        if not self.inventory.contains(item):
             print(f"There is no {item} to deposit")
             return 0
 
-        deposit_amount = quantity if quantity else self.inventory[item]
+        available = self.inventory.get(item)
 
-        if deposit_amount > self.inventory[item]:
-            deposit_amount = self.inventory[item]
+        if quantity and quantity <= available:
+            deposit_amount = quantity
+        else:
+            deposit_amount = available
 
         try:
             response = await send_request(character=self.name, item=item, quantity=deposit_amount, action=action)
@@ -317,17 +324,26 @@ class Character():
     async def withdraw(self, item: str, quantity: int = None) -> int:
         action = "withdraw"
 
-        if not quantity:
-            quantity = self.max_items
+        free_space = self.inventory.free_space()
+
+        # Check if character has enough space for the required item quantity
+        if quantity and quantity <= free_space:
+            withdraw_amount = quantity
+        else:
+            withdraw_amount = free_space
+            print(f"{self.name} can only withdraw {free_space} at the moment")
+
+        # TODO: Check if bank has enough of required items
 
         try:
-            response = await send_request(character=self.name, item=item, quantity=quantity, action=action)
+            response = await send_request(character=self.name, item=item, quantity=withdraw_amount, action=action)
         except Exception as e:
             logging.error(f"{self.name} failed to '{action}'. \n{e}")
             return 0
         else:
             self.update_inventory(action, item, quantity)
             data = response.json()
+            print(f"{self.name} withdrew {withdraw_amount} {item}")
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return response.status_code
 

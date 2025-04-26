@@ -58,3 +58,9 @@ class Inventory:
 
     def is_empty(self) -> bool:
         return not self.slots
+
+    def contains(self, item) -> bool:
+        return item in self.slots
+
+    def get_inventory(self) -> dict:
+        return self.slots

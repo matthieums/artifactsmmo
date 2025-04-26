@@ -1,6 +1,6 @@
 import logging
 logger = logging.getLogger(__name__)
-
+import traceback
 
 class Task:
     def __init__(self, method: callable, iterations: int | None, *args, **kwargs):
@@ -21,7 +21,7 @@ class Task:
                 self.log_success()
                 return 1
             except Exception as e:
-                print(f"Exception occurred during task.run(): {e}")
+                print(f"Exception occurred during task.run(): {traceback.format_exc()}")
                 return
 
         while not self.completed:
@@ -32,7 +32,7 @@ class Task:
                     self.log_success()
                     return 1
             except Exception as e:
-                print(f"Exception occurred during task.run(): {e!r}")
+                print(f"Exception occurred during task.run(): {traceback.format_exc()}")
                 return
         return
 
