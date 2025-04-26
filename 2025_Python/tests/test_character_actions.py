@@ -6,7 +6,8 @@ import pytest
 # command to run = PYTHONPATH=2025_Python pytest 2025_Python/tests
 # Must be called from artifactsmmo folder !!!
 
-# character.handle_cooldown
+
+############## character.handle_cooldown
 @pytest.mark.asyncio
 @patch("asyncio.sleep", return_value=None)
 async def test_handle_cooldown(mock_sleep, test_character):
@@ -20,7 +21,7 @@ async def test_handle_cooldown(mock_sleep, test_character):
     assert character.cooldown_duration == 0
 
 
-# character.gather()
+############## character.gather()
 @pytest.mark.asyncio
 @patch("models.character.post_character_action")
 @patch("models.character.Character.update_inventory")
