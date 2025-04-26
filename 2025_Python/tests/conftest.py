@@ -1,4 +1,4 @@
-from models import Character, Inventory
+from models import Character, Inventory, Item
 from main import initialize_characters
 import pytest
 import pytest_asyncio
@@ -19,3 +19,4 @@ def inventory_factory(test_character):
     def create_inventory(slots, max_capacity: int = 50):
         return Inventory(character=test_character, slots=slots, max_capacity=max_capacity)
     return create_inventory
+
