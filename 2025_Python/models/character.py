@@ -242,49 +242,52 @@ class Character():
     @check_character_position
     async def craft(self, item: str, quantity: int | None = 1) -> int:
         action = "craft"
-        # TODO: In order:
-        # Add number of items wished as optional. If no
-        # number, infinite.
-        # If not enough resources to craft all the items, do I
-        # still craft or do I gather all resources to build everything?
-        # 1. Check if enough resources in the inventory
-        # 2. Check if resources are available in the bank
-        # 3. Check if resources can be gathered or crafted (maybe recursively)
-        # Watch out for inventory space etc. I would need a function to 
-        # forecast what I will need and if I can.
-        # 4. Craft
-        # 5. Update inventory resources
+        
+        item_data = await get_item_info(item)
+        item_object = Item.from_data(item_data["data"])
 
-
-        # Get resource, either by querying the bank or creating a function to
-        # dispatch resource gathering making calls depending on resource type
-        # and amounts I need to craft
-
-        if not await self.can_craft(item, quantity):
+        # 1. Check if enough resources in inventory to craft item
+        if not await self.can_craft(item_object, quantity):
+            # TODO: Find out missing resources
+            # Check if they are available in bank, else trigger gather
+                # I will need a table "lootable_from" for the character to know
+                # where he should be getting the resource.
+                # That's where the queuing starts. I will need to find out
+                # all the steps needed and either create a subqueue or enqueue
+                # the tasks in reverse order
+            # If items in the resources that I don't have, craft them
+            # Fetch resources
+            # Try crafting again
             return
 
-        # Update resources in inventory
-        try:
-            response = await send_request(character=self.name, action=action, item=item)
-        except Exception as e:
-            logging.error(f"{self.name} failed to craft {item}. \n{e}")
-        else:
-            data = response.json()
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-            return 1
+        ingredients = item_object.get_ingredients()
 
-    async def can_craft(self, item: str, amount: int | None):
+        # 2. Craft items
+        for _ in range(quantity):
+            try:
+                response = await send_request(character=self.name, action=action, item=item)
+            except Exception as e:
+                logging.error(f"{self.name} failed to craft {item}. \n{e}")
+            else:
+                data = response.json()
+                for ingredient in ingredients:
+                    code, qty = ingredient["code"], ingredient["quantity"]
+                    self.inventory.remove(item=code, quantity=qty)
+                self.inventory.add(item=item, quantity=1)
+                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+        return 1
+
+    async def can_craft(self, item: Item, amount: int) -> bool:
         """Checks if character has enough resources to craft the desired
         amount of items"""
-        item_info = await get_item_info(item)
-        item_object = Item.from_data(item_info["data"])
-        recipe = item_object.get_ingredients()
+
+        recipe = item.get_ingredients(amount)
 
         for ingredient in recipe:
             code, qty = ingredient["code"], ingredient["quantity"]
             if not self.inventory.contains_resources(code, qty):
                 missing_value = qty - self.inventory.get(code)
-                print(f"missing {missing_value} {code} to craft {amount} {item_object}")
+                print(f"missing {missing_value} {code} to craft {amount} {item}")
                 return False
         return True
 
