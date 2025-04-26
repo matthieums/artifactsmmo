@@ -30,8 +30,8 @@ async def make_post_request(
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(**kwargs)
-        except Exception as e:
-            logging.error(f"Failed to build or send post request. \n{e}", exc_info=True)
+        except httpx.RequestError as e:
+            logging.error(f"Failed to send post request: {e}", exc_info=True)
             raise e
         else:
             return response
@@ -89,11 +89,11 @@ async def send_request(
         if not item:
             raise Exception("Missing argument: item")
         headers = build_headers(POST)
-        data = json.dumps({
+        json_data = json.dumps({
             "code": item
         })
         url = f"{BASE_URL}/my/{character}/action/crafting"
-        response = await make_post_request(url=url, headers=headers, data=data)
+        response = await make_post_request(url=url, headers=headers, data=json_data)
 
     elif action in ["equip", "unequip"]:
         headers = build_headers(POST)
@@ -103,7 +103,7 @@ async def send_request(
             "slot": slot
         }
         json_data = json.dumps(data)
-        response = await make_post_request(url=url, headers=headers, data=data)
+        response = await make_post_request(url=url, headers=headers, data=json_data)
 
     elif action == "item_info":
         headers = build_headers(GET)
@@ -119,7 +119,7 @@ async def send_request(
             "quantity": quantity
         }
         json_data = json.dumps(data)
-        response = await make_post_request(url=url, headers=headers, data=data)
+        response = await make_post_request(url=url, headers=headers, data=json_data)
 
     elif action == "char_data":
         headers = build_headers(GET)
