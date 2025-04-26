@@ -1,12 +1,14 @@
+from errors import InventoryFullError,ItemNotFoundError
+
 
 class Inventory:
     def __init__(self, character: object, slots: dict, max_capacity: int):
         self.owner = character
         self.slots = slots
-        self.max_capacity = 0
+        self.max_capacity = max_capacity
 
     @classmethod
-    def from_data(cls, data, character):
+    def from_data(cls, data: dict, character: object):
         return cls(
             slots={
                 item["code"]: item["quantity"]
@@ -18,30 +20,41 @@ class Inventory:
         )
 
     def add(self, item, quantity):
-        owned = self.slots.get(item, 0)
-        if (
-            item in self.slots and
-            owned + quantity > self.max_capacity
-        ):
-            self.slots[item] = owned + quantity
+        if quantity <= self.free_space():
+            self.slots[item] = self.get(item) + quantity
         else:
-            print(f"Not enough space to add {item} to {self.owner}'s inventory")
+            raise InventoryFullError(f"Not enough space to add {item} to {self.owner}'s inventory")
 
-    def remove(self, item, quantity):
+    def remove(self, item, quantity: int | None = None):
         if item not in self.slots:
-            print("No such item in inventory")
+            print(f"No {item} found in {self.owner}'s inventory. Cannot remove.")
+            raise ItemNotFoundError
 
-        self.slots[item] = self.slots.get(item) - quantity
-
-        if self.slots[item] < 0:
+        elif not quantity:
             del self.slots[item]
-        # update
+            print(f"All {item} removed from {self.owner}'s inventory.")
+            return 1
+
+        else:
+            self.slots[item] = self.slots[item] - quantity
+            print(f"{quantity} {item} removed from {self.owner}'s inventory")
+            if self.slots[item] < 0:
+                del self.slots[item]
+                print(f"No more {item} in {self.owner}'s inventory")
+            return 1
 
     def occupied_space(self):
         return sum(self.slots.values())
 
     def free_space(self):
-        return (self.occupied_space() - self.max_capacity)
+        return (self.max_capacity - self.occupied_space())
 
     def contains_resources(self, item, quantity):
         return self.slots.get(item) >= quantity
+
+    def get(self, item: 0):
+        """Return quantity of an item in inventory. Returns 0 if item not present."""
+        return self.slots.get(item, 0)
+
+    def is_empty(self) -> bool:
+        return not self.slots
