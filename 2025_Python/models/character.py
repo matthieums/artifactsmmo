@@ -142,15 +142,19 @@ class Character():
         return 1
 
     async def move_to(self, location: str) -> int:
-        url, headers, data = await send_request(character=self.name, action="move", location=location)
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers, data=data)
+        try:
+            response = await make_post_request(self.name, "move", location)
+        except Exception as e:
+            logger.error(f"Error in move method: {str(e)}")
+            return 1
+        else:
             if response.status_code == 200:
                 print(f"{self.name} has moved to {location}...")
                 self.update_position(location)
                 data = response.json()
                 await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-                return response.status_code
+                return response
+            logger.error("Error during move function")
 
     def update_position(self, location):
         self.position = locations[location]
