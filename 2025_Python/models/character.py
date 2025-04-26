@@ -206,8 +206,10 @@ class Character():
         if response.is_success:
             data = response.json()
 
-            for item in data["data"]["details"]["items"]:
-                self.update_inventory(action=action, item=item)
+            gathered_items = data["data"]["details"]["items"]
+            for item in gathered_items:
+                code, qty = item.get("code"), item.get("quantity")
+                self.update_inventory(action=action, item=code, quantity=qty)
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return
 
@@ -242,7 +244,7 @@ class Character():
     @check_character_position
     async def craft(self, item: str, quantity: int | None = 1) -> int:
         action = "craft"
-        
+
         item_data = await get_item_info(item)
         item_object = Item.from_data(item_data["data"])
 
@@ -291,14 +293,14 @@ class Character():
                 return False
         return True
 
-    def update_inventory(self, action: str, item: str, value: int | None = None):
+    def update_inventory(self, action: str, item: str, quantity: int | None = None):
         try:
             if action in ["deposit", "empty_inventory"]:
-                self.inventory.remove(item, value)
+                self.inventory.remove(item, quantity)
                 return
 
             elif action in ["looted", "withdraw", "gather"]:
-                self.inventory.add(item, value)
+                self.inventory.add(item, quantity)
                 return
 
             else:

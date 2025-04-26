@@ -19,8 +19,8 @@ class Inventory:
             owner=owner
         )
 
-    def add(self, item, quantity):
-        if quantity <= self.free_space():
+    def add(self, item: str, quantity: int | None) -> None:
+        if quantity and quantity <= self.free_space():
             self.slots[item] = self.get(item) + quantity
         else:
             raise InventoryFullError(f"Not enough space to add {item} to {self.owner}'s inventory")
