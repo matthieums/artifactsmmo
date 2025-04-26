@@ -14,3 +14,9 @@ class CharacterRequestBuildError(Exception):
         self.name = name
         self.action = action
         self.location = location
+
+class InventoryFullError(Exception):
+    pass
+
+class ItemNotFoundError(Exception):
+    pass
