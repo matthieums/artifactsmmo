@@ -49,8 +49,17 @@ class Inventory:
     def free_space(self):
         return (self.max_capacity - self.occupied_space())
 
-    def contains_resources(self, item, quantity):
-        return self.slots.get(item) >= quantity
+    def contains_resources(self, items: dict):
+        """Checks if all resources are found in inventory. Else returns
+        a dict with the resources missing"""
+        missing = dict()
+
+        for item in items:
+            code, qty = item["code"], item["quantity"]
+            available = self.slots.get(code)
+            if not available >= qty:
+                missing[code] = qty - available
+        return missing
 
     def get(self, item: 0):
         """Return quantity of an item in inventory. Returns 0 if item not present."""
