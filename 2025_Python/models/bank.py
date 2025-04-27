@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class Bank:
-    def __init__(self, slots, gold, inventory):
+    def __init__(self, slots: dict, gold: int, inventory):
         self.slots = slots
         self.gold = gold
         self.inventory = inventory
@@ -47,3 +47,23 @@ class Bank:
             return data
         else:
             raise Exception("Problem during bank initialization")
+
+    def get(self, item: str) -> int:
+        return self.slot.get(item, 0)
+
+    def contains_resources(self, items: dict) -> tuple:
+        """Checks if all resources are found in inventory. Else returns
+        two dicts. One with the resources missing, one with the resources found"""
+        missing = dict()
+        found = dict()
+
+        for item in items:
+            code, qty = item["code"], item["quantity"]
+            available = self.get(code)
+            if available:
+                found[code] = available
+            if not available >= qty:
+                missing[code] = qty - available
+        missing.update({"location": "bank"})
+
+        return found, missing
