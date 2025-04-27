@@ -59,16 +59,23 @@ async def send_request(
     slot: Optional[str] = None, quantity: Optional[int] = None
 ) -> tuple:
 
-    if action == "move":
-        headers = build_headers(POST)
+    if action in ["move", "map_data"]:
         x, y = locations[location]
-        data = {
-            "x": x,
-            "y": y
-        }
-        json_data = json.dumps(data)
-        url = f"{BASE_URL}/my/{character}/action/move"
-        response = await make_post_request(url=url, headers=headers, data=json_data)
+
+        if action == "move":
+            headers = build_headers(POST)
+            data = {
+                "x": x,
+                "y": y
+            }
+            json_data = json.dumps(data)
+            url = f"{BASE_URL}/my/{character}/action/move"
+            response = await make_post_request(url=url, headers=headers, data=json_data)
+
+        elif action == "map_data":
+            headers = build_headers(GET)
+            url = f"{BASE_URL}/maps/{x}/{y}"
+            response = await make_get_request(url=url, headers=headers)
 
     elif action == "fight":
         headers = build_headers(POST)
@@ -135,6 +142,7 @@ async def send_request(
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/bank/items"
         response = await make_get_request(url=url, headers=headers)
+
 
     if response.is_success:
         format_action_message(character, action, location)
