@@ -1,9 +1,7 @@
 from functools import wraps
 from data import locations, bank_actions
-from utils import get_item_info
 import inspect
 import logging
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +18,6 @@ def check_character_position(f):
 
         if func_name in bank_actions:
             required_position = "bank"
-
-        elif func_name == "craft":
-            item_data = await get_item_info(*args)
-            required_position = item_data["data"]["craft"]["skill"]
 
         if not required_position:
             logger.error("Triggered missing location error")
