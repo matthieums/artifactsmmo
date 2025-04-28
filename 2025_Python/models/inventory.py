@@ -53,9 +53,7 @@ class Inventory:
     def available(self, items: dict) -> dict:
         """Returns a dict of items found
         in the inventory {code: qty}"""
-        for code in items:
-            items[code] = self.slots.get(code, 0)
-        return items
+        return {code: self.slots.get(code, 0) for code in items}
 
     def get(self, item: str | Item):
         """Return quantity of an item in inventory. Returns 0 if item not present."""
@@ -68,8 +66,8 @@ class Inventory:
     def is_empty(self) -> bool:
         return not self.slots
 
-    def contains(self, item) -> bool:
-        return item in self.slots
+    def contains(self, items: dict) -> bool:
+        return all(self.slots.get(code, 0) >= qty for code, qty in items.items())
 
     def get_inventory(self) -> dict:
         return self.slots

@@ -57,6 +57,4 @@ class Bank:
     def available(self, items: dict) -> dict:
         """Returns a dictionary of the available items found
         in the bank {code: qty}"""
-        for code in items:
-            items[code] = self.inventory.get(code, 0)
-        return items
+        return {code: self.inventory.get(code, 0) for code in items}
