@@ -33,10 +33,10 @@ class Item:
         if not self.craftable:
             raise ItemNotCraftableError
 
-        return [
-            {"code": ingr["code"], "quantity": ingr["quantity"] * quantity}
+        return {
+            ingr["code"]: ingr["quantity"] * quantity
             for ingr in self.ingredients
-        ]
+            }
 
     def __str__(self):
         return f"{self.name}"
