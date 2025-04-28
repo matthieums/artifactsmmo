@@ -1,0 +1,4 @@
+monsters = {
+    "chicken",
+    "cow",
+    }

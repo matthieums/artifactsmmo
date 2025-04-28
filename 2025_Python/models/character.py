@@ -192,27 +192,38 @@ class Character():
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return 1
 
+    def is_at_location(self, location: str):
+        return self.position == locations[location]
+
     @check_character_position
-    async def gather(self, location: str) -> int:
+    async def gather(self, quantity: int, resource: str, location: str = None) -> int:
+        action = determine_action(location)
+        remaining = quantity
 
-        INVENTORY_FULL = 497
-        action = "gather"
+        if self.inventory.is_full():
+            await self.empty_inventory()
 
-        try:
-            response = await send_request(self.name, action=action, location=location)
-        except Exception as e:
-            logging.error(f"Action '{action}' failed for {self.name} at {location}. \n{e}")
-            return 0
+        while remaining > 0:
+            try:
+                response = await send_request(self.name, action=action, location=location)
+            except Exception as e:
+                logging.error(f"Action '{action}' failed for {self.name} at {location}. \n{e}")
+                return 0
+            else:
+                if not response.is_success:
+                    raise CharacterActionError(response, self.name, action, location)
 
-        if response.is_success:
-            data = response.json()
+                data = response.json()
+                looted_items = data["data"]["details"]["items"]
 
-            gathered_items = data["data"]["details"]["items"]
-            for item in gathered_items:
-                code, qty = item.get("code"), item.get("quantity")
-                self.update_inventory(action=action, item=code, quantity=qty)
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-            return
+                for loot in looted_items:
+                    code, qty = loot.get("code"), loot.get("quantity")
+                    self.update_inventory(action=action, item=code, quantity=qty)
+
+                    if code == resource:
+                        quantity -= qty
+
+                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
         elif not response.is_success:
             if response.status_code == INVENTORY_FULL:

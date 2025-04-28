@@ -21,3 +21,10 @@ def subtract_dicts(dict1, dict2):
 async def find_on_map(item: str) -> str:
     """Return the map location code on which to find an item"""
     return lootable_from[item]
+
+
+def determine_action(location: str) -> str:
+    if location in monsters:
+        return "fight"
+    elif location in resources:
+        return "gather"

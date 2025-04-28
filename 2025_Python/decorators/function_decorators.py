@@ -12,6 +12,12 @@ def check_character_position(f):
     @wraps(f)
     async def wrapper(self, *args, **kwargs):
         logger.info("Wrapper function called")
+
+        if kwargs.get("resource"):
+            resource = kwargs.get("resource")
+            kwargs["location"] = find_on_map(resource)
+            logger.info(f"Resource found. Location set to {kwargs['location']}.")
+
         required_position = kwargs.get("location")
 
         func_name = f.__name__
