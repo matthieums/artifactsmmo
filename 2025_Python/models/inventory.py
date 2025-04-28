@@ -66,6 +66,9 @@ class Inventory:
     def is_empty(self) -> bool:
         return not self.slots
 
+    def is_full(self) -> bool:
+        return self.occupied_space() == self.max_capacity
+
     def contains(self, items: dict) -> bool:
         return all(self.slots.get(code, 0) >= qty for code, qty in items.items())
 
