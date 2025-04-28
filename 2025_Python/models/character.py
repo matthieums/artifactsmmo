@@ -66,21 +66,19 @@ class Character():
     def enqueue_task(self, task):
         self.task_queue.append(task)
 
-    def add_task(self, iterations: int | None, method_name: str, *args, **kwargs):
-        method = getattr(self, method_name, None)
+    def add_task(self, iterations: int, method: Callable[..., Any], *args, **kwargs):
 
         if not callable(method):
-            raise AttributeError(f"'{method_name} is not a valid method")
+            raise AttributeError(f"'{method} is not a valid method")
 
-        task = Task(method, iterations, *args, **kwargs)
-        self.enqueue_task(task)
+        for _ in range(iterations):
+            task = Task(method=method, args=args, kwargs=kwargs)
+            self.enqueue_task(task)
 
     async def run_tasks(self):
         while self.task_queue:
             task = self.task_queue.popleft()
-            result = await task.run()
-            if result == 1:
-                continue
+            await task.run()
 
     def update_gold(self, quantity: int) -> int:
         """Add a negative or positive value to the character's gold count"""

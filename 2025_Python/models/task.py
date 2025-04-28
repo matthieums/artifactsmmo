@@ -1,37 +1,25 @@
 import logging
 logger = logging.getLogger(__name__)
 import traceback
+from dataclasses import dataclass, field
+from typing import Callable, Any
+import inspect
 
 
+@dataclass
 class Task:
-    def __init__(self, method: callable, iterations: int | None, *args, **kwargs):
-        if not callable(method):
-            raise ValueError("Method is not callable")
-        self.method = method
-        self.args = args
-        self.kwargs = kwargs
-        self.iterations = iterations
-        self.completed = False
+    method: Callable[..., Any]
+    args: tuple = field(default_factory=tuple)
+    kwargs: dict = field(default_factory=dict)
 
     async def run(self):
-        if self.iterations:
-            try:
-                for _ in range(self.iterations):
-                    await self.method(*self.args, **self.kwargs)
-                self.completed = True
-                self.log_success()
-                return 1
-            except Exception as e:
-                print(f"Exception occurred during task.run(): {traceback.format_exc()}")
-                return
-
-        while not self.completed:
-            try:
-                await self.method(*self.args, **self.kwargs)
-            except Exception as e:
-                print(f"Exception occurred during task.run(): {traceback.format_exc()}")
-                return
-        return
+        if callable(self.method):
+            if inspect.iscoroutinefunction(self.method):
+                return await self.method(*self.args, **self.kwargs)
+            else:
+                return self.method(*self.args, **self.kwargs)
+        else:
+            raise TypeError("Task is not callable")
 
     def log_success(self):
         logger.info("Task completed.")
