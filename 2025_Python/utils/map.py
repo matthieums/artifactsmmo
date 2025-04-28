@@ -20,16 +20,14 @@ async def find_on_map(item: str) -> str:
     return lootable_from[item]
 
 
-def find_resources(items) -> list:
+def find_resources(items: dict) -> dict:
     """Return a dict containing the item, its location and
     the quantity needed."""
-    resource_list = {}
+    resource_locations = dict()
 
-    for item in items:
-        code, qty = item["code"], item["quantity"]
+    for code, _ in items.items():
         location = find_on_map(code)
-        resource_list["location"] = location
-        resource_list["code"] = code
-        resource_list["quantity"] = qty
-
-    return resource_list
+        resource_locations.update(
+            {location: code}
+        )
+        return resource_locations
