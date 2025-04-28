@@ -3,7 +3,7 @@ import json
 from data import locations
 from typing import Optional
 import httpx
-from .feedback import format_action_message
+from utils.feedback import format_action_message
 import logging
 
 logger = logging.getLogger(__name__)
@@ -143,6 +143,14 @@ async def send_request(
         url = f"{BASE_URL}/my/bank/items"
         response = await make_get_request(url=url, headers=headers)
 
+    elif action == "monster_data":
+        headers = build_headers(GET)
+        url = f"{BASE_URL}/monsters/get"
+        data = {
+            "code": location,
+        }
+        json_data = json.dumps(data)
+        response = await make_get_request(url=url, headers=headers, data=data)
 
     if response.is_success:
         format_action_message(character, action, location)
