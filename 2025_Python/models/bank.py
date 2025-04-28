@@ -1,9 +1,9 @@
 # How to update the bank during the script? I mean you could just destroy the bank
 # and recreate it based on the fetched data.
 
-import httpx
 from utils import send_request
 import logging
+from models import Item
 
 logger = logging.getLogger(__name__)
 
@@ -16,17 +16,16 @@ class Bank:
 
     @classmethod
     def from_api_data(cls, details, items) -> "Bank":
-        try:
-            slots = details.get("slots", 0),
-            gold = details.get("gold", 0),
+        slots = details.get("slots")
+        gold = details.get("gold")
 
-            inventory = {
-                item["code"]: item["quantity"] for item in items
-            }
-            return cls(slots=slots, gold=gold, inventory=inventory)
-        except Exception as e:
-            logger.error(f"Error initializing Bank from API data: {e}")
-            raise
+        if not slots or not gold:
+            raise ValueError("Missing required fields: 'slots' or 'gold'.")
+
+        inventory = {
+            item["code"]: item["quantity"] for item in items
+        }
+        return cls(slots=slots, gold=gold, inventory=inventory)
 
     @classmethod
     async def get_bank_details(cls):
@@ -48,22 +47,16 @@ class Bank:
         else:
             raise Exception("Problem during bank initialization")
 
-    def get(self, item: str) -> int:
-        return self.slot.get(item, 0)
+    def get(self, item: str | Item) -> dict:
+        code = item if not item.isinstance(Item) else item.code
 
-    def contains_resources(self, items: dict) -> tuple:
-        """Checks if all resources are found in inventory. Else returns
-        two dicts. One with the resources missing, one with the resources found"""
-        missing = dict()
-        found = dict()
+        quantity = self.inventory.get(code, 0)
 
-        for item in items:
-            code, qty = item["code"], item["quantity"]
-            available = self.get(code)
-            if available:
-                found[code] = available
-            if not available >= qty:
-                missing[code] = qty - available
-        missing.update({"location": "bank"})
+        return quantity
 
-        return found, missing
+    def available(self, items: dict) -> dict:
+        """Returns a dictionary of the available items found
+        in the bank {code: qty}"""
+        for code in items:
+            items[code] = self.inventory.get(code, 0)
+        return items

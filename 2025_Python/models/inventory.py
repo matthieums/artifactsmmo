@@ -1,4 +1,5 @@
 from errors import InventoryFullError, ItemNotFoundError
+from models import Item
 
 
 class Inventory:
@@ -49,21 +50,20 @@ class Inventory:
     def free_space(self):
         return (self.max_capacity - self.occupied_space())
 
-    def contains_resources(self, items: dict):
-        """Checks if all resources are found in inventory. Else returns
-        a dict with the resources missing"""
-        missing = dict()
+    def available(self, items: dict) -> dict:
+        """Returns a dict of items found
+        in the inventory {code: qty}"""
+        for code in items:
+            items[code] = self.slots.get(code, 0)
+        return items
 
-        for item in items:
-            code, qty = item["code"], item["quantity"]
-            available = self.slots.get(code)
-            if not available >= qty:
-                missing[code] = qty - available
-        return missing
-
-    def get(self, item: 0):
+    def get(self, item: str | Item):
         """Return quantity of an item in inventory. Returns 0 if item not present."""
-        return self.slots.get(item, 0)
+        code = item if isinstance(item, str) else item.code
+
+        quantity = self.slots.get(code, 0)
+
+        return quantity
 
     def is_empty(self) -> bool:
         return not self.slots
