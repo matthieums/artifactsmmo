@@ -3,12 +3,14 @@
 
 from utils import send_request
 import logging
-from models import Item
+from models import ItemContainer, Item
 
 logger = logging.getLogger(__name__)
 
 
-class Bank:
+class Bank(ItemContainer):
+    name_of_gather = "withdraw"
+
     def __init__(self, slots: dict, gold: int, inventory):
         self.slots = slots
         self.gold = gold
@@ -58,3 +60,6 @@ class Bank:
         """Returns a dictionary of the available items found
         in the bank {code: qty}"""
         return {code: self.inventory.get(code, 0) for code in items}
+
+    def __str__(self):
+        return "bank"
