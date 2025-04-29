@@ -56,7 +56,8 @@ class Character():
     def is_on_cooldown(self):
         return self.cooldown_duration > 0
 
-    async def handle_cooldown(self, value: int) -> None:
+    async def handle_response_cooldown(self, data: dict) -> None:
+        value = data["data"]["cooldown"]["total_seconds"]
         cooldown = value
         print(f"{self.name} is on cooldown for {cooldown} seconds...")
         await asyncio.sleep(cooldown)
@@ -112,7 +113,7 @@ class Character():
         if fight_result == "loss":
             self.update_position("spawn")
             print(f"{self.name} has died")
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            await self.handle_response_cooldown(data)
 
         print(f"{self.name} has won the fight")
         loot["gold"] = self.update_gold(fight_data["gold"])
@@ -132,7 +133,7 @@ class Character():
 
         format_loot_message(self.name, loot)
 
-        await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+        await self.handle_response_cooldown(data)
 
         return 1
 
@@ -147,7 +148,7 @@ class Character():
                 print(f"{self.name} has moved to {location}...")
                 self.update_position(location)
                 data = response.json()
-                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+                await self.handle_response_cooldown(data)
                 return response
             logger.error("Error during move function")
 
@@ -187,7 +188,7 @@ class Character():
             self.hp["hp"] = self.hp["max_hp"]
 
             data = response.json()
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            await self.handle_response_cooldown(data)
             return 1
 
     def is_at_location(self, location: str):
@@ -221,13 +222,7 @@ class Character():
                     if code == resource:
                         quantity -= qty
 
-                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
-
-        elif not response.is_success:
-            if response.status_code == INVENTORY_FULL:
-                return 1
-            else:
-                raise CharacterActionError(response, self.name, action, location)
+                await self.handle_response_cooldown(data)
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()
@@ -248,7 +243,7 @@ class Character():
             logger.error(f"Error in fight method: {str(e)}")
             return 1
         else:
-            await self.handle_cooldown(response["data"]["cooldown"]["total_seconds"])
+            await self.handle_response_cooldown(response["data"]["cooldown"]["total_seconds"])
             return response.status_code
 
     @check_character_position
@@ -275,7 +270,7 @@ class Character():
                         code, qty = ingredient["code"], ingredient["quantity"]
                         self.inventory.remove(item=code, quantity=qty)
                     self.inventory.add(item=item, quantity=1)
-                    await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+                    await self.handle_response_cooldown(data)
             return 1
 
         # sources = [self.inventory: Inventory, self.bank: Bank]
@@ -391,7 +386,7 @@ class Character():
                     print(f"{self.name} has deposited {quantity} {item}")
                     self.update_inventory(action, item)
                     data = response.json()
-                    await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+                    await self.handle_response_cooldown(data)
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:
@@ -417,7 +412,7 @@ class Character():
             if response.status_code == 200:
                 self.update_inventory(action, item, deposit_amount)
                 data = response.json()
-                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+                await self.handle_response_cooldown(data)
                 return 1
             print("error during deposit")
 
@@ -444,7 +439,7 @@ class Character():
             self.update_inventory(action, item, quantity)
             data = response.json()
             print(f"{self.name} withdrew {withdraw_amount} {item}")
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            await self.handle_response_cooldown(data)
             return response.status_code
 
     def __repr__(self):
