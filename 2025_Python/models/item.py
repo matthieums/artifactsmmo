@@ -33,7 +33,7 @@ class Item:
     @classmethod
     async def load(cls, item_code: str) -> "Item":
         item_data = await get_item_info(item_code)
-        return cls.from_data(item_data["data"])
+        return cls.from_data(item_data.get("data"))
 
     def get_ingredients(self, quantity: int | None = 1):
         if not self.craftable:
