@@ -246,114 +246,92 @@ class Character():
             await self.handle_response_cooldown(response["data"]["cooldown"]["total_seconds"])
             return response.status_code
 
-    @check_character_position
-    async def craft(self, item: str, quantity: int | None = 1) -> int:
+    async def craft(self, item_code: str, quantity: int | None = 1) -> int:
         """Attempts to craft an item from inventory resources.
-        If resources are missing, queues tasks to find them, re-enqueues
-        itself, and returns."""
+        If resources are missing, finds them before crafting."""
         action = "craft"
+        args = (item_code, quantity)
+        item_object = await Item.load(item_code)
+        needed = item_object.get_ingredients(quantity)
+        bank = self.bank
 
         item_data = await get_item_info(item)
         item_object = Item.from_data(item_data["data"])
         ingredients_needed = item_object.get_ingredients(quantity)
 
         # Craft immediately if all items are inventory
-        if self.inventory.contains(ingredients_needed):
+
+        if self.inventory.contains_everything(needed):
+            logger.debug(f"{self}'s inventory contains everything for crafting {item_code}")
+            if self.position != locations[item_object.skill]:
+                await self.move_to(item_object.skill)
+
             for _ in range(quantity):
                 try:
-                    response = await send_request(character=self.name, action=action, item=item)
+                    response = await send_request(character=self.name, action=action, item=item_code)
                 except Exception as e:
-                    logging.error(f"{self.name} failed to craft {item}. \n{e}")
+                    logger.error(f"{self.name} failed to craft {item_code}. \n{e}")
+                    logger.error("response: ", response.text)
                 else:
-                    data = response.json()
-                    for ingredient in ingredients_needed:
-                        code, qty = ingredient["code"], ingredient["quantity"]
-                        self.inventory.remove(item=code, quantity=qty)
-                    self.inventory.add(item=item, quantity=1)
-                    await self.handle_response_cooldown(data)
+                    data = response.json()["data"]
+                    for ingredient, quantity in needed.items():
+                        self.update_inventory(ingredient, quantity)
+                    for result_data in data["details"]["items"]:
+                        self.update_inventory(result_data.get("code"), result_data.get("quantity"))
+                    await self.handle_cooldown(data["cooldown"]["total_seconds"])
             return 1
 
-        # sources = [self.inventory: Inventory, self.bank: Bank]
-        # #  If missing ingredients, check what's in the inventory
-        # async def gather_ingredients(items: dict, sources: list):
-        #     for source in sources:
+        logger.debug(f"{self}'s inventory misses ingredients for crafting {item_code}")
 
-        available_in_inventory = self.inventory.available(ingredients_needed)
-        if available_in_inventory:
-            ingredients_needed = subtract_dicts(ingredients_needed, available_in_inventory)
+        space_needed = sum(needed.values())
+        if not self.inventory.free_space() >= space_needed:
+            if self.inventory.max_capacity > space_needed:
+                await self.empty_inventory()
+                return await self.craft(args)
+            return ValueError(f"Too many items for {self}'s inventory capacity")
 
-        if ingredients_needed:
-            available_in_bank = self.bank.available(ingredients_needed)
-            if available_in_bank:
-                ingredients_needed = subtract_dicts(ingredients_needed, available_in_bank)
+        available_in_inventory = self.inventory.available(needed)
 
-                bank_kwargs = []
-                for code, qty in available_in_bank.items():
-                    bank_kwargs.append({
-                        "location": "bank",
-                        "item": code,
-                        "quantity": qty
-                    })
+        logger.debug(f"{self} already has {available_in_inventory} in his inventory")
 
-                for kwargs in bank_kwargs:
-                    await self.prepare_task_data(**kwargs)
+        self.update_based_on_available_resources(available_in_inventory, needed)
 
-            if ingredients_needed:
-                resources_locations = find_resources(ingredients_needed)
+        logger.debug(f"{self} needs {needed}")
 
-                world_kwargs = []
-                for location, code in resources_locations.items():
-                    world_kwargs.append({
-                        "location": location,
-                        "item": code,
-                        "quantity": ingredients_needed[code]
-                    })
+        async with bank.lock:
+            available_in_bank = bank.available(needed)
+            await bank.reserve(self, available_in_bank)
 
-                for kwargs in world_kwargs:
-                    await self.prepare_task_data(**kwargs)
+        self.update_based_on_available_resources(available_in_bank, needed)
 
-    async def prepare_task_data(self, location: str, item: str, quantity: int):
-        # Now build kwargs {location: location, code: code, qty: qty}
-        # {location: "bank", code: "copper_rocks", qty: 4}
-        # {location: "copper_rocks", code: "copper_ore", qty: 50}
-        # {location: "iron_rocks", code: "iron_ore", qty: 25}
-
-        if not location:
-            logger.error("No location provided to the fetch data function")
-
-        # TODO: This will be a problem if I call craft on multiple characters at the
-        # same time.
-        if location == "bank":
-            method_name = "withdraw"
-            self.add_task(iterations=1, method_name=method_name, item=item, quantity=quantity)
-
-        elif location == "world":
+        # Withdraw from the bank
+        withdrawn = {}
+        for code, quantity in available_in_bank.items():
             try:
-                map_data = await get_map_data(location)
-                data = map_data.json()["data"]
-            except Exception as e:
-                logger.error(f"Cannot fetch data for location {location}. {str(e)}")
-                return 0
+                await self.withdraw(code, quantity)
+            except Exception:
+                logger.error(
+                    f"""
+                    Error during gathering of crafting ingredients.
+                    {self} will now return everything to the bank
+                    """
+                )
+                return await self.empty_inventory()
             else:
-                map_type = data["content"]["type"]
-                if map_type == "monster":
-                    method_name = "fight"
-                elif map_type == "resource":
-                    method_name = "gather"
-                else:
-                    logger.error(f"Unknown map type: {map_type}")
+                withdrawn[code] = quantity
+                async with bank.lock:
+                    await bank.clear_reservation(self, code)
 
-            self.add_task(iterations=1, method_name=method_name, location=location)
+        self.update_based_on_available_resources(withdrawn, needed)
 
-        # TODO: Now, I need to adapt my task runner to run until a condition is fulfilled.
-        # In this case, until the quantity is gathered or looted
-        return
+        # Gather from the world
+        for code, quantity in needed.items():
+            await self.gather(quantity=quantity, resource=code)
+        return await self.craft(*args)
 
-    def update_inventory(self, action: str, item: str, quantity: int | None = None):
-        try:
-            if action in ["deposit", "empty_inventory"]:
-                self.inventory.remove(item, quantity)
-                return
+    def update_based_on_available_resources(self, available: dict, materials: dict) -> dict:
+        missing_from_source = subtract_dicts(materials, available)
+        return missing_from_source
 
     def update_inventory(self, item: str, quantity: int):
         if quantity > 0:
