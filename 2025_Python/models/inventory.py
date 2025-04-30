@@ -1,21 +1,25 @@
 from errors import InventoryFullError, ItemNotFoundError
 from models import Item
+from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Inventory:
-    def __init__(self, owner: object, slots: dict, max_capacity: int):
+    def __init__(self, owner: object, slots: defaultdict, max_capacity: int):
         self.owner = owner
         self.slots = slots
         self.max_capacity = max_capacity
 
     @classmethod
-    def from_data(cls, data: dict, owner: object):
+    def from_data(cls, data: list, owner: object) -> "Inventory":
         return cls(
-            slots={
-                item["code"]: item["quantity"]
-                for item in data.get("inventory", [])
-                if item["quantity"] > 0
-                },
+            slots=defaultdict(int, {
+                slot["code"]: slot["quantity"]
+                for slot in data.get("inventory", [])
+                if slot["quantity"] > 0 and slot["code"] != ""
+            }),
             max_capacity=data.get("inventory_max_items"),
             owner=owner
         )
@@ -48,7 +52,7 @@ class Inventory:
     def available(self, items: dict) -> dict:
         """Returns a dict of items found
         in the inventory {code: qty}"""
-        return {code: self.slots.get(code, 0) for code in items}
+        return {code: self.slots.get(code) for code in items}
 
     def get(self, item: str | Item):
         """Return quantity of an item in inventory. Returns 0 if item not present."""
@@ -65,7 +69,5 @@ class Inventory:
         return self.occupied_space() == self.max_capacity
 
     def contains_everything(self, items: dict) -> bool:
+        logger.debug(f"items needed: ", items)
         return all(self.slots.get(code, 0) >= qty for code, qty in items.items())
-
-    def get_inventory(self) -> dict:
-        return self.slots
