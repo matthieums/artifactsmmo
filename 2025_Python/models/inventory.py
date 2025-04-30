@@ -43,6 +43,24 @@ class Inventory:
             print(f"No more {item} in {self.owner}'s inventory")
         return 1
 
+    async def empty(self, bank: Bank, keep: list | None):
+        """Empty the inventory in the bank."""
+        keep = keep or []
+
+        if self.is_empty():
+            logger.error("Nothing to deposit")
+            return
+
+        for item, quantity in dict(self).items():
+            try:
+                await bank.deposit(self.owner, item, quantity)
+            except Exception as e:
+                logger.error(f"Error in empty method: {str(e)}")
+            else:
+                quantity = self.get(item)
+                self.remove(item, quantity)
+                print(f"{self.owner} has deposited {quantity} {item}")
+
     def occupied_space(self):
         return sum(self.slots.values())
 

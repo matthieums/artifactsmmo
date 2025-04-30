@@ -364,27 +364,11 @@ class Character():
             logger.error("Invalid quantity provided to update_inventory")
 
     @check_character_position
-    async def empty_inventory(self, keep: list = None):
-        action = "empty_inventory"
-
-        if self.inventory.is_empty():
-            print("Nothing to deposit.")
-
-        for item, quantity in dict(self.inventory.get_inventory()).items():
-            if keep and item in keep:
-                continue
-            try:
-                response = await send_request(character=self.name, item=item, quantity=quantity, action="deposit")
-            except Exception as e:
-                logger.error(f"Error in empty_inventory method: {str(e)}")
-                return 1
-            else:
-                if response.status_code == 200:
-                    quantity = self.inventory.get(item)
-                    print(f"{self.name} has deposited {quantity} {item}")
-                    self.update_inventory(action, item)
-                    data = response.json()
-                    await self.handle_response_cooldown(data)
+    async def empty_inventory(self, keep: list = None) -> int:
+        """Delegation pattern. Calls the empty method on the
+        character's inventory."""
+        await self.inventory.empty(self.bank, keep)
+        return 1
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:

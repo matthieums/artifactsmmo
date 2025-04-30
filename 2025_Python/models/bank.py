@@ -15,6 +15,8 @@ class Bank(ItemContainer):
         self.slots = slots
         self.gold = gold
         self.inventory = inventory
+        self.reserved = defaultdict(dict)
+        self.lock = asyncio.Lock()
 
     @classmethod
     def from_api_data(cls, details, items) -> "Bank":
