@@ -53,6 +53,17 @@ class Bank(ItemContainer):
 
     async def deposit(self, character: Character, item: str, quantity: int) -> int:
         action = "deposit"
+        available = character.inventory.get(item)
+
+        if available is None:
+            logger.error(f"There is no {item} to deposit")
+            return 0
+
+        if quantity and quantity <= available:
+            deposit_amount = quantity
+        else:
+            deposit_amount = available
+
         try:
             response = await send_request(
                 character=character,
@@ -65,6 +76,7 @@ class Bank(ItemContainer):
         else:
             async with self.lock:
                 self.add(item, quantity)
+            character.inventory.remove(item, deposit_amount)
             data = response.json()
             await character.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return 1

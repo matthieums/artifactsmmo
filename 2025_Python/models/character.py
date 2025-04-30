@@ -372,31 +372,7 @@ class Character():
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:
-        action = "deposit"
-
-        if not self.inventory.contains(item):
-            print(f"There is no {item} to deposit")
-            return 0
-
-        available = self.inventory.get(item)
-
-        if quantity and quantity <= available:
-            deposit_amount = quantity
-        else:
-            deposit_amount = available
-
-        try:
-            response = await send_request(character=self.name, item=item, quantity=deposit_amount, action=action)
-        except Exception as e:
-            logger.error(f"Error in empty_inventory method: {str(e)}")
-            return 0
-        else:
-            if response.status_code == 200:
-                self.update_inventory(action, item, deposit_amount)
-                data = response.json()
-                await self.handle_response_cooldown(data)
-                return 1
-            print("error during deposit")
+        await self.bank.deposit(self, quantity, item)
 
     @check_character_position
     async def withdraw(self, item: str, quantity: int = None) -> int:
