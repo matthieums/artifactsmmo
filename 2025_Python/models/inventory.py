@@ -20,29 +20,24 @@ class Inventory:
             owner=owner
         )
 
-    def add(self, item: str, quantity: int | None) -> None:
-        if quantity and quantity <= self.free_space():
-            self.slots[item] = self.get(item) + quantity
+    def add(self, item: str, quantity: int) -> None:
+        if quantity <= self.free_space():
+            self.slots[item] += quantity
         else:
             raise InventoryFullError(f"Not enough space to add {item} to {self.owner}'s inventory")
 
-    def remove(self, item, quantity: int | None = None):
+    def remove(self, item, quantity: int):
         if item not in self.slots:
             print(f"No {item} found in {self.owner}'s inventory. Cannot remove.")
             raise ItemNotFoundError
 
-        elif not quantity:
-            del self.slots[item]
-            print(f"All {item} removed from {self.owner}'s inventory.")
-            return 1
+        self.slots[item] -= quantity
+        print(f"{quantity} {item} removed from {self.owner}'s inventory")
 
-        else:
-            self.slots[item] = self.slots[item] - quantity
-            print(f"{quantity} {item} removed from {self.owner}'s inventory")
-            if self.slots[item] < 0:
-                del self.slots[item]
-                print(f"No more {item} in {self.owner}'s inventory")
-            return 1
+        if self.slots[item] < 0:
+            del self.slots[item]
+            print(f"No more {item} in {self.owner}'s inventory")
+        return 1
 
     def occupied_space(self):
         return sum(self.slots.values())

@@ -355,15 +355,13 @@ class Character():
                 self.inventory.remove(item, quantity)
                 return
 
-            elif action in ["looted", "withdraw", "gather"]:
-                self.inventory.add(item, quantity)
-                return
-
-            else:
-                raise ValueError(f"Unsupported inventory action: {action}")
-        except Exception as e:
-            logging.error(f"An error occured: {e}")
-            return None
+    def update_inventory(self, item: str, quantity: int):
+        if quantity > 0:
+            self.inventory.add(item, quantity)
+        elif quantity < 0:
+            self.inventory.remove(item, abs(quantity))
+        else:
+            logger.error("Invalid quantity provided to update_inventory")
 
     @check_character_position
     async def empty_inventory(self, keep: list = None):
