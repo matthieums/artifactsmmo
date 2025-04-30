@@ -71,3 +71,9 @@ class Inventory:
     def contains_everything(self, items: dict) -> bool:
         logger.debug(f"items needed: ", items)
         return all(self.slots.get(code, 0) >= qty for code, qty in items.items())
+
+    def __iter__(self):
+        return iter(self.slots.items())
+
+    def __len__(self):
+        return len(self.slots)
