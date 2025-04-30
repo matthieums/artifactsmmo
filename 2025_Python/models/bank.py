@@ -51,6 +51,81 @@ class Bank(ItemContainer):
         else:
             raise Exception("Problem during bank initialization")
 
+    async def deposit(self, character: Character, item: str, quantity: int) -> int:
+        action = "deposit"
+        try:
+            response = await send_request(
+                character=character,
+                item=item,
+                quantity=quantity,
+                action=action
+            )
+        except Exception as e:
+            logger.error(f"Error while trying to deposit: {str(e)}")
+        else:
+            async with self.lock:
+                self.add(item, quantity)
+            data = response.json()
+            await character.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            return 1
+
+    async def withdraw(self, character: Character, item: str, quantity: int) -> int:
+        action = "withdraw"
+        try:
+            response = await send_request(
+                character=character,
+                item=item,
+                quantity=quantity,
+                action=action
+            )
+        except Exception as e:
+            logger.error(f"Error while trying to deposit: {str(e)}")
+        else:
+            async with self.lock:
+                self.remove(item, quantity)
+            data = response.json()
+            await character.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+
+    def remove(self, item, quantity):
+        inventory = self.inventory
+        if item not in inventory:
+            raise ValueError(
+                f"No {item} found in bank's inventory. Cannot remove."
+                )
+
+        inventory[item] -= quantity
+        print(f"{quantity} {item} removed from bank's inventory")
+
+        if inventory[item] <= 0:
+            del inventory[item]
+            print(f"No more {item} in {self.owner}'s inventory")
+        return 1
+
+    def add(self, item: str, quantity: int) -> int:
+        self.inventory[item] += quantity
+        return 1
+
+    def available(self, items: dict) -> dict:
+        """Returns a dictionary of the available items found
+        in the bank {code: qty}"""
+        available = {}
+        for code, qty in items.items():
+            if self.inventory.get(code, 0) >= qty:
+                available[code] = qty
+        return available
+
+    async def reserve(self, booker: Character, items):
+        for code, quantity in items.items():
+            self.reserved[booker].update({code: quantity})
+            self.inventory[code] -= quantity
+            # reserved = {character: [{item1: qty}, {item2: qty}]}
+        return
+
+    async def clear_reservation(self, booker: Character, item):
+        logger.debug("Clearing reservation")
+        del self.reserved[booker][item]
+        return
+
     def get(self, item: str | Item) -> dict:
         code = item if not item.isinstance(Item) else item.code
 
