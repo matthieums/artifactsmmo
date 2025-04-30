@@ -217,12 +217,12 @@ class Character():
 
                 for loot in looted_items:
                     code, qty = loot.get("code"), loot.get("quantity")
-                    self.update_inventory(action=action, item=code, quantity=qty)
+                    self.update_inventory(item=code, quantity=qty)
 
                     if code == resource:
-                        quantity -= qty
+                        remaining -= qty
 
-                await self.handle_response_cooldown(data)
+                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()
