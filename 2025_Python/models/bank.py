@@ -83,11 +83,18 @@ class Bank(ItemContainer):
 
     async def withdraw(self, character: Character, item: str, quantity: int) -> int:
         action = "withdraw"
+
+        free_space = character.inventory.free_space()
+        if quantity and quantity <= free_space:
+            withdraw_amount = quantity
+        else:
+            withdraw_amount = free_space
+            print(f"{character} can only withdraw {free_space} at the moment")
         try:
             response = await send_request(
                 character=character,
                 item=item,
-                quantity=quantity,
+                quantity=withdraw_amount,
                 action=action
             )
         except Exception as e:
@@ -96,6 +103,7 @@ class Bank(ItemContainer):
             async with self.lock:
                 self.remove(item, quantity)
             data = response.json()
+            print(f"{character} withdrew {withdraw_amount} {item}")
             await character.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
     def remove(self, item, quantity):

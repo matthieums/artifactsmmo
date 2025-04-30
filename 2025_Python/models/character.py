@@ -376,11 +376,7 @@ class Character():
 
     @check_character_position
     async def withdraw(self, item: str, quantity: int = None) -> int:
-        action = "withdraw"
-
-        free_space = self.inventory.free_space()
-
-        # TODO: Check if bank has enough of required items BEFORE moving
+        await self.bank.withdraw(self, item, quantity)
 
         # Check if character has enough space for the required item quantity
         if quantity and quantity <= free_space:
