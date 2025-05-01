@@ -95,3 +95,6 @@ class Inventory:
 
     def __len__(self):
         return len(self.slots)
+
+    def __contains__(self, item):
+        return item in self.slots
