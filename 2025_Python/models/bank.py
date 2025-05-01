@@ -4,6 +4,11 @@
 from utils import send_request
 import logging
 from models import ItemContainer, Item
+from collections import defaultdict
+import asyncio
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from models import Character
 
 logger = logging.getLogger(__name__)
 
