@@ -274,8 +274,9 @@ class Character():
                     logger.error("response: ", response.text)
                 else:
                     data = response.json()["data"]
-                    for ingredient, quantity in needed.items():
-                        self.update_inventory(ingredient, quantity)
+                    # TODO: Refactor update_inventory because of "-"
+                    for code, qty in ingredients.items():
+                        self.update_inventory(code, -qty)
                     for result_data in data["details"]["items"]:
                         self.update_inventory(result_data.get("code"), result_data.get("quantity"))
                     await self.handle_cooldown(data["cooldown"]["total_seconds"])
