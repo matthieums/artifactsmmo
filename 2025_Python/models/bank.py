@@ -103,7 +103,7 @@ class Bank(ItemContainer):
                 action=action
             )
         except Exception as e:
-            logger.error(f"Error while trying to deposit: {str(e)}")
+            logger.error(f"Error while trying to withdraw: {str(e)}")
         else:
             async with self.lock:
                 self.remove(item, quantity)
