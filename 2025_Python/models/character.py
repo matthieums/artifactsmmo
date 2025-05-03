@@ -4,7 +4,13 @@ import asyncio
 from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import logging
 from collections import deque
-from models import Task, Inventory, Item, Bank
+from typing import Callable, Any, TYPE_CHECKING, Optional
+
+from models import Item, Task
+from models.inventory import Inventory
+from models.equipment import Equipment
+from decorators import check_character_position
+from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 from errors import CharacterActionError
 from utils import subtract_dicts
 
@@ -22,6 +28,7 @@ class Character():
         position: list,
         equipment: dict,
         inventory: Inventory,
+        equipment: Equipment,
         max_items: int,
         combat: dict,
     ) -> None:
@@ -40,15 +47,15 @@ class Character():
         self.bank = None
 
     @classmethod
-    def from_api_data(cls, data: dict) -> "Character":
+    def from_api_data(cls, data: dict) -> Character:
         return cls(
             name=data.get("name"),
             gold=data.get("gold"),
             levels={key: data.get(key) for key in XP_KEYS},
             position=[data.get("x"), data.get("y")],
             hp={stat: data.get(stat) for stat in HP_KEYS},
-            equipment={slot: data.get(slot, "") for slot in SLOT_KEYS},
-            inventory=None,
+            equipment=Equipment.from_data(data),
+            inventory=Inventory.from_data(data),
             max_items=data.get("inventory_max_items"),
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
         )
