@@ -90,6 +90,10 @@ class Inventory:
         logger.debug(f"items needed: ", items)
         return all(self.slots.get(code, 0) >= qty for code, qty in items.items())
 
+    async def has_enough_space(self, space: int):
+        if not self.free_space() >= space:
+            return False
+
     def __iter__(self):
         return iter(self.slots.items())
 

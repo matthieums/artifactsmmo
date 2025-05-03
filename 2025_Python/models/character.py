@@ -285,8 +285,9 @@ class Character():
         logger.debug(f"{self}'s inventory misses ingredients for crafting {item_code}")
 
         space_needed = sum(needed.values())
-        if not self.inventory.free_space() >= space_needed:
-            if self.inventory.max_capacity > space_needed:
+
+        if not await inventory.has_enough_space(space_needed):
+            if inventory.max_capacity >= space_needed:
                 await self.empty_inventory()
                 return await self.craft(args)
             return ValueError(f"Too many items for {self}'s inventory capacity")
