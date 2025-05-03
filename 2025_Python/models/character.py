@@ -234,15 +234,13 @@ class Character():
     def has_equipped(self, item: str):
         return item in self.equipment.values()
 
-    async def toggle_equipped(self, item: str) -> int:
-        # TODO: Check if already unequipped
-        item_data = await get_item_info(item)
-        slot = item_data["data"]["type"]
+    async def equip(self, item_code: str) -> int:
+        item = await Item.load(item_code)
+        await self.equipment.equip(self, item)
 
-        if self.has_equipped(item):
-            action = "unequip"
-        else:
-            action = "equip"
+    async def unequip(self, item_code):
+        item = await Item.load(item_code)
+        await self.equipment.unequip(self, item)
 
         try:       
             response = await send_request(character=self.name, action=action, item=item, slot=slot)
