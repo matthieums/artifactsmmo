@@ -250,7 +250,8 @@ class Character():
         """Attempts to craft an item from inventory resources.
         If resources are missing, finds them before crafting."""
         action = "craft"
-        args = (item_code, quantity)
+        inventory = self.inventory
+        kwargs = {"item_code": item_code, "quantity": quantity}
         item_object = await Item.load(item_code)
         needed = item_object.get_ingredients(quantity)
         bank = self.bank
@@ -289,8 +290,10 @@ class Character():
         if not await inventory.has_enough_space(space_needed):
             if inventory.max_capacity >= space_needed:
                 await self.empty_inventory()
-                return await self.craft(args)
-            return ValueError(f"Too many items for {self}'s inventory capacity")
+                return await self.craft(**kwargs)
+            else:
+                logger.error(f"Not enough space in inventory to craft")
+                return ValueError(f"Too many items for {self}'s inventory capacity")
 
         available_in_inventory = self.inventory.available(needed)
 
@@ -329,7 +332,7 @@ class Character():
         # Gather from the world
         for code, quantity in needed.items():
             await self.gather(quantity=quantity, resource=code)
-        return await self.craft(*args)
+        return await self.craft(**kwargs)
 
     def update_based_on_available_resources(self, available: dict, materials: dict) -> dict:
         missing_from_source = subtract_dicts(materials, available)
