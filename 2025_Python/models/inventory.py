@@ -13,7 +13,7 @@ class Inventory:
         self.max_capacity = max_capacity
 
     @classmethod
-    def from_data(cls, data: list, owner: object) -> "Inventory":
+    def from_data(cls, data: list) -> Inventory:
         return cls(
             slots=defaultdict(int, {
                 slot["code"]: slot["quantity"]
@@ -21,7 +21,7 @@ class Inventory:
                 if slot["quantity"] > 0 and slot["code"] != ""
             }),
             max_capacity=data.get("inventory_max_items"),
-            owner=owner
+            owner=None
         )
 
     def add(self, item: str, quantity: int) -> None:
