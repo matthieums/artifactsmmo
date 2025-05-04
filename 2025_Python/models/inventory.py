@@ -56,10 +56,6 @@ class Inventory:
                 await bank.deposit(self.owner, item, quantity)
             except Exception as e:
                 logger.error(f"Error in empty method: {str(e)}")
-            else:
-                quantity = self.get(item)
-                self.remove(item, quantity)
-                print(f"{self.owner} has deposited {quantity} {item}")
 
     def occupied_space(self):
         return sum(self.slots.values())
