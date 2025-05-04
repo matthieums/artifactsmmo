@@ -165,22 +165,19 @@ class Character():
     @check_character_position
     async def fight(self, location: str) -> int:
         LOW_HP_THRESHOLD = 0.5
+        action = "fight"
 
         if self.hp["hp"] < (LOW_HP_THRESHOLD * self.hp["max_hp"]):
             logger.info(f"{self.name} is low on HP, resting before the fight.")
             await self.rest()
 
         try:
-            response = await send_request(self.name, action="fight", location=location)
-            if response is None:
-                return 1
-
-            await self.handle_fight_data(response)
-            return 1
-
+            response = await send_request(self.name, action=action, location=location)
         except Exception as e:
             logger.error(f"Error in fight method: {str(e)}")
-            return 1
+            return
+        else:
+            await self.handle_fight_data(response)
 
     async def rest(self):
         try:
