@@ -65,11 +65,14 @@ class Character():
     def is_on_cooldown(self):
         return self.cooldown_duration > 0
 
-    async def handle_response_cooldown(self, data: dict) -> None:
-        value = data["data"]["cooldown"]["total_seconds"]
-        cooldown = value
-        print(f"{self.name} is on cooldown for {cooldown} seconds...")
-        await asyncio.sleep(cooldown)
+    async def handle_cooldown(self, seconds: int | None = None) -> None:
+        if seconds is None:
+            seconds = self.cooldown_duration
+
+        if seconds > 0:
+            logger.info(f"{self.name} is on cooldown for {seconds} seconds...")
+
+        await asyncio.sleep(seconds)
         self.cooldown_duration = 0
         return
 
