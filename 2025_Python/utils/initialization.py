@@ -1,10 +1,13 @@
-from models import Character, Bank, Inventory
-from utils.requests_factory import send_request
+from __future__ import annotations
 import logging
 from dateutil import parser
 from tzlocal import get_localzone
 from datetime import datetime
 import math
+
+from models.bank import Bank
+from models import Character
+from utils.requests_factory import send_request
 
 logger = logging.getLogger(__name__)
 NUMBER_OF_CHARACTERS = 5
@@ -12,33 +15,31 @@ NUMBER_OF_CHARACTERS = 5
 
 async def initialize_characters(bank):
     logger.info("Initializing Characters...")
+
     try:
         response = await send_request(action="char_data")
     except Exception as e:
         logger.error(f"Failed to initialize characters: {e}")
         raise
-    data = response.json()["data"]
-    characters = [Character.from_api_data(entry) for entry in data]
+    else:
+        local_tz = get_localzone()
+        local_time = datetime.now(local_tz)
+        data = response.json()["data"]
+        characters = [Character.from_api_data(entry, bank) for entry in data]
 
-    assert len(characters) == NUMBER_OF_CHARACTERS
-    logger.info("Characters succesfully initialized")
+        assert len(characters) == NUMBER_OF_CHARACTERS
+        logger.info("Characters succesfully initialized")
 
-    local_tz = get_localzone()
-    local_time = datetime.now(local_tz)
+        for i in range(len(characters)):
+            logging.debug(f"{characters[i]}'s inventory initialized with: {characters[i].inventory} ")
+            logging.debug(f"{characters[i]}'s equipment initialized with: {characters[i].equipment} ")
 
-    logger.info("Initializing inventory...")
-    logger.info("Setting cooldown values...")
-    for i in range(len(characters)):
-        characters[i].bank = bank
-        inventory = Inventory.from_data(data[i], characters[i])
-        inventory.owner = characters[i]
-        characters[i].inventory = inventory
-        characters[i].cooldown_expiration = parser.isoparse(data[i]["cooldown_expiration"])
-        characters[i].cooldown_duration = math.ceil((characters[i].cooldown_expiration - local_time).total_seconds())
-    logger.info("Inventory initialized.")
-    logger.info("Setting cooldown values.")
+            logger.info("Setting cooldown values...")
+            characters[i].cooldown_expiration = parser.isoparse(data[i]["cooldown_expiration"])
+            characters[i].cooldown_duration = math.ceil((characters[i].cooldown_expiration - local_time).total_seconds())
+            logger.info(f"Coolodown duration initialized to {characters[i].cooldown_duration}")
 
-    return characters
+        return characters
 
 
 async def initialize_bank():
@@ -50,5 +51,6 @@ async def initialize_bank():
         logger.error(f"Failed to initialize bank: {e}")
         raise
     else:
-        logger.info("Bank initialized.")
-        return Bank.from_api_data(bank_data, bank_items)
+        bank = Bank.from_api_data(bank_data, bank_items)
+        logger.info(f"Bank initialized with {repr(bank)}")
+        return bank

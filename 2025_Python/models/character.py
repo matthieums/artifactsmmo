@@ -31,6 +31,7 @@ class Character():
         equipment: Equipment,
         max_items: int,
         combat: dict,
+        bank: Optional[Bank] = None,
     ) -> None:
         self.name = name
         self.hp = hp
@@ -58,6 +59,7 @@ class Character():
             inventory=Inventory.from_data(data),
             max_items=data.get("inventory_max_items"),
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
+            bank=bank
         )
 
     def is_on_cooldown(self):
