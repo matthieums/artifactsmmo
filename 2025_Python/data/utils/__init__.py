@@ -1,0 +1,1 @@
+from .fight_data import handle_fight_data
