@@ -47,19 +47,25 @@ class Character():
         self.bank = None
 
     @classmethod
-    def from_api_data(cls, data: dict) -> Character:
-        return cls(
+    def from_api_data(cls, data: dict, bank: Bank) -> Character:
+        inventory = Inventory.from_data(data)
+        equipment = Equipment.from_data(data)
+
+        character = cls(
             name=data.get("name"),
             gold=data.get("gold"),
             levels={key: data.get(key) for key in XP_KEYS},
             position=[data.get("x"), data.get("y")],
             hp={stat: data.get(stat) for stat in HP_KEYS},
-            equipment=Equipment.from_data(data),
-            inventory=Inventory.from_data(data),
+            equipment=equipment,
+            inventory=inventory,
             max_items=data.get("inventory_max_items"),
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
             bank=bank
         )
+
+        inventory.owner = character
+        return character
 
     def is_on_cooldown(self):
         return self.cooldown_duration > 0
