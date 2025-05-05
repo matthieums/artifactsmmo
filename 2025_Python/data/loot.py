@@ -1,5 +1,9 @@
 
 lootable_from = {
     "copper_ore": "copper_rocks",
-    "iron_ore": "iron_rocks"
+    "iron_ore": "iron_rocks",
+    "ash_wood": "ash_tree",
+
+    "feather": "chicken",
+    
 }
