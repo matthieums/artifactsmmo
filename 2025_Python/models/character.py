@@ -183,6 +183,7 @@ class Character():
             return
         else:
             await self.handle_fight_data(response)
+            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
     async def rest(self):
         try:
