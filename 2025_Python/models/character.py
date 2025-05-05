@@ -237,15 +237,6 @@ class Character():
         item = await Item.load(item_code)
         await self.equipment.unequip(self, item)
 
-        try:       
-            response = await send_request(character=self.name, action=action, item=item, slot=slot)
-        except Exception as e:
-            logger.error(f"Error in fight method: {str(e)}")
-            return 1
-        else:
-            await self.handle_response_cooldown(response["data"]["cooldown"]["total_seconds"])
-            return response.status_code
-
     async def craft(self, item_code: str, quantity: int | None = 1) -> int:
         """Attempts to craft an item from inventory resources.
         If resources are missing, finds them before crafting."""
