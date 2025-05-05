@@ -1,9 +1,9 @@
 import logging
-logger = logging.getLogger(__name__)
-import traceback
 from dataclasses import dataclass, field
 from typing import Callable, Any
 import inspect
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass

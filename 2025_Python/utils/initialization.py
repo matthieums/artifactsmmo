@@ -8,6 +8,8 @@ import math
 from models.bank import Bank
 from models import Character
 from utils.requests_factory import send_request
+from models.task_manager import TaskManager
+from user_interface import load_character_tasks
 
 logger = logging.getLogger(__name__)
 NUMBER_OF_CHARACTERS = 5
@@ -37,7 +39,7 @@ async def initialize_characters(bank):
             logger.info("Setting cooldown values...")
             characters[i].cooldown_expiration = parser.isoparse(data[i]["cooldown_expiration"])
             characters[i].cooldown_duration = math.ceil((characters[i].cooldown_expiration - local_time).total_seconds())
-            logger.info(f"Coolodown duration initialized to {characters[i].cooldown_duration}")
+            logger.debug(f"Coolodown duration initialized to {characters[i].cooldown_duration}")
 
         return characters
 
@@ -52,5 +54,15 @@ async def initialize_bank():
         raise
     else:
         bank = Bank.from_api_data(bank_data, bank_items)
-        logger.info(f"Bank initialized with {repr(bank)}")
+        logger.debug(f"Bank initialized with {repr(bank)}")
         return bank
+
+
+async def initialize_task_manager(characters: list[Character]):
+    logger.info("Initializing task manager")
+
+    task_manager = TaskManager()
+    load_character_tasks(task_manager, characters)
+
+    logger.info("Task manager initialized")
+    return task_manager
