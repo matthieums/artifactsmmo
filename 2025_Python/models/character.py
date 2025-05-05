@@ -191,13 +191,10 @@ class Character():
             logger.error(f"Error in fight method: {str(e)}")
             return 1
         else:
-            if response is None:
-                return 1
-
-            self.hp["hp"] = self.hp["max_hp"]
+            self.update_hp(self.hp["max_hp"])
 
             data = response.json()
-            await self.handle_response_cooldown(data)
+            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return 1
 
     def is_at_location(self, location: str):
