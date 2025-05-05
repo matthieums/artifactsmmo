@@ -182,6 +182,13 @@ class Character():
             logger.error(f"Error in fight method: {str(e)}")
             return
         else:
+            data = response.json()
+            result = data['data']['fight']['result']
+            if result == "loss":
+                logger.info(f"{self} died during a fight")
+                self.update_position("spawn")
+                self.move_to(location)
+
             await self.handle_fight_data(response)
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
