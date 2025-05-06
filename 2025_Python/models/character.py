@@ -1,19 +1,22 @@
-from utils import send_request, format_loot_message, get_item_info, get_map_data, find_resources
-from decorators import check_character_position
+from __future__ import annotations
 import asyncio
 from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import logging
-from collections import deque
-from typing import Callable, Any, TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional
 
-from models import Item, Task
+from models import Item
 from models.inventory import Inventory
 from models.equipment import Equipment
 from decorators import check_character_position
-from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
+from data import locations, XP_KEYS, HP_KEYS, COMBAT_KEYS
+from data.utils import handle_fight_data
 from errors import CharacterActionError
-from utils import subtract_dicts
+from utils.requests_factory import send_request
+from utils.helpers import subtract_dicts, determine_action
 
+
+if TYPE_CHECKING:
+    from models import Bank
 
 logger = logging.getLogger(__name__)
 
