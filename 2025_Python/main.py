@@ -3,6 +3,7 @@ import asyncio
 import config
 import logging
 from utils.initialization import initialize_bank, initialize_characters, initialize_task_manager
+import state
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,8 @@ async def create_instance():
 
     bank = await initialize_bank()
     characters = await initialize_characters(bank)
-    task_manager = await initialize_task_manager(characters)
+    state.characters = characters
+    task_manager = await initialize_task_manager()
 
     logger.info("Initialization complete.")
 
