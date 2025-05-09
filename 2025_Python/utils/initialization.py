@@ -5,6 +5,8 @@ from tzlocal import get_localzone
 from datetime import datetime
 import math
 
+from data.monsters import monsters
+from data.resources import resources
 from models.bank import Bank
 from models import Character
 from utils.requests_factory import send_request
