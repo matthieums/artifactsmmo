@@ -37,10 +37,11 @@ async def make_post_request(
             return response
 
 
-async def make_get_request(url: str, headers: dict):
+async def make_get_request(url: str, headers: dict, params: dict = None):
     kwargs = {
         "url": url,
         "headers": headers,
+        "params": params or {}
     }
 
     async with httpx.AsyncClient() as client:
