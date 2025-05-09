@@ -213,8 +213,6 @@ class Character():
         needed = item_object.get_ingredients(quantity)
         bank = self.bank
 
-        item_data = await get_item_info(item)
-        item_object = Item.from_data(item_data["data"])
         ingredients_needed = item_object.get_ingredients(quantity)
 
         # Craft immediately if all items are inventory
@@ -233,7 +231,7 @@ class Character():
                 else:
                     data = response.json()["data"]
                     # TODO: Refactor update_inventory because of "-"
-                    for code, qty in ingredients.items():
+                    for code, qty in ingredients_needed.items():
                         self.update_inventory(code, -qty)
                     for result_data in data["details"]["items"]:
                         self.update_inventory(result_data.get("code"), result_data.get("quantity"))
