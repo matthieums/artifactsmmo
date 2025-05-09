@@ -1,6 +1,3 @@
-# How to update the bank during the script? I mean you could just destroy the bank
-# and recreate it based on the fetched data.
-
 from utils import send_request
 import logging
 from models import ItemContainer, Item
