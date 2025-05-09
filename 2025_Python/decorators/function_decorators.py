@@ -17,7 +17,9 @@ def check_character_position(f):
         if kwargs.get("resource"):
             resource = kwargs.get("resource")
             kwargs["location"] = await find_on_map(resource)
-            logger.info(f"Resource found. Location set to {kwargs['location']}.")
+            logger.info(
+                f"Resource found. Location set to {kwargs['location']}."
+            )
 
         required_position = kwargs.get("location")
 
