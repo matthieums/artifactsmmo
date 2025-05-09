@@ -114,7 +114,7 @@ class Character():
                 print(f"{self.name} has moved to {location}...")
                 self.update_position(location)
                 data = response.json()
-                await self.handle_response_cooldown(data)
+                await self.handle_cooldown(data)
                 return response
             logger.error("Error during move function")
 
@@ -317,24 +317,6 @@ class Character():
     @check_character_position
     async def withdraw(self, item: str, quantity: int = None) -> int:
         await self.bank.withdraw(self, item, quantity)
-
-        # Check if character has enough space for the required item quantity
-        if quantity and quantity <= free_space:
-            withdraw_amount = quantity
-        else:
-            withdraw_amount = free_space
-            print(f"{self.name} can only withdraw {free_space} at the moment")
-        try:
-            response = await send_request(character=self.name, item=item, quantity=withdraw_amount, action=action)
-        except Exception as e:
-            logging.error(f"{self.name} failed to '{action}'. \n{e}")
-            return 0
-        else:
-            self.update_inventory(action, item, quantity)
-            data = response.json()
-            print(f"{self.name} withdrew {withdraw_amount} {item}")
-            await self.handle_response_cooldown(data)
-            return response.status_code
 
     def __repr__(self):
         return self.name
