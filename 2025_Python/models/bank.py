@@ -155,10 +155,5 @@ class Bank(ItemContainer):
 
         return quantity
 
-    def available(self, items: dict) -> dict:
-        """Returns a dictionary of the available items found
-        in the bank {code: qty}"""
-        return {code: self.inventory.get(code, 0) for code in items}
-
     def __str__(self):
         return "bank"
