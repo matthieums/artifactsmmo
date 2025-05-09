@@ -28,11 +28,16 @@ class Inventory:
         if quantity <= self.free_space():
             self.slots[item] += quantity
         else:
-            raise InventoryFullError(f"Not enough space to add {item} to {self.owner}'s inventory")
+            raise InventoryFullError(
+                f"Not enough space to add {item} to"
+                f"{self.owner}'s inventory"
+                )
 
     def remove(self, item, quantity: int):
         if item not in self.slots:
-            print(f"No {item} found in {self.owner}'s inventory. Cannot remove.")
+            print(
+                f"No {item} found in {self.owner}'s inventory. Cannot remove."
+            )
             raise ItemNotFoundError
 
         self.slots[item] -= quantity
@@ -69,7 +74,8 @@ class Inventory:
         return {code: self.slots.get(code) for code in items}
 
     def get(self, item: str | Item):
-        """Return quantity of an item in inventory. Returns 0 if item not present."""
+        """Return quantity of an item in inventory. Returns 0 if item not
+        present."""
         code = item if isinstance(item, str) else item.code
 
         quantity = self.slots.get(code, 0)
@@ -83,8 +89,10 @@ class Inventory:
         return self.occupied_space() == self.max_capacity
 
     def contains_everything(self, items: dict) -> bool:
-        logger.debug(f"items needed: ", items)
-        return all(self.slots.get(code, 0) >= qty for code, qty in items.items())
+        logger.debug("items needed: ", items)
+        return all(
+            self.slots.get(code, 0) >= qty for code, qty in items.items()
+            )
 
     async def has_enough_space(self, space: int):
         if not self.free_space() >= space:
