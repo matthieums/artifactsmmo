@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 async def get_map_data(location: str):
+    from utils import send_request
     action = "map_data"
     try:
         response = await send_request(action=action, location=location)
@@ -28,7 +29,6 @@ async def find_on_map(item: str) -> str:
 def find_resources(items: dict) -> dict:
     """Return a dict containing the item, its location and
     the quantity needed."""
-    from utils import send_request
     resource_locations = dict()
 
     for code, _ in items.items():
@@ -42,6 +42,10 @@ def find_resources(items: dict) -> dict:
 def find_closest(character: "Character", location: str) -> tuple:
     """Finds the closest location to the character's position"""
     options = maps.get(location)
+
+    if len(options) == 1:
+        return options[0]
+
     x, y = character.position
     min_distance = float("inf")
     closest = None
