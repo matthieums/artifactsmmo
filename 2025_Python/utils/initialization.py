@@ -33,13 +33,27 @@ async def initialize_characters(bank):
         logger.info("Characters succesfully initialized")
 
         for i in range(len(characters)):
-            logging.debug(f"{characters[i]}'s inventory initialized with: {characters[i].inventory} ")
-            logging.debug(f"{characters[i]}'s equipment initialized with: {characters[i].equipment} ")
+            logging.debug(
+                f"{characters[i]}'s inventory initialized with: "
+                f"{characters[i].inventory}"
+            )
+            logging.debug(
+                f"{characters[i]}'s equipment initialized with: "
+                f"{characters[i].equipment}"
+            )
 
             logger.info("Setting cooldown values...")
-            characters[i].cooldown_expiration = parser.isoparse(data[i]["cooldown_expiration"])
-            characters[i].cooldown_duration = math.ceil((characters[i].cooldown_expiration - local_time).total_seconds())
-            logger.debug(f"Coolodown duration initialized to {characters[i].cooldown_duration}")
+            characters[i].cooldown_expiration = parser.isoparse(
+                data[i]["cooldown_expiration"]
+                )
+            characters[i].cooldown_duration = math.ceil(
+                (characters[i].cooldown_expiration - local_time)
+                .total_seconds()
+            )
+            logger.debug(
+                "Coolodown duration initialized to "
+                f"{characters[i].cooldown_duration}"
+            )
 
         return characters
 
