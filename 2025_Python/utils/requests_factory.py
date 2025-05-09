@@ -48,7 +48,9 @@ async def make_get_request(url: str, headers: dict, params: dict = None):
         try:
             response = await client.get(**kwargs)
         except Exception as e:
-            logging.error(f"Failed to build or send get request. \n{e}", exc_info=True)
+            logging.error(
+                f"Failed to build or send get request. \n{e}", exc_info=True
+                )
             raise e
         else:
             return response
@@ -73,7 +75,9 @@ async def send_request(
             }
             json_data = json.dumps(data)
             url = f"{BASE_URL}/my/{character}/action/move"
-            response = await make_post_request(url=url, headers=headers, data=json_data)
+            response = await make_post_request(
+                url=url, headers=headers, data=json_data
+            )
 
         elif action == "map_data":
             headers = build_headers(GET)
@@ -103,7 +107,9 @@ async def send_request(
             "code": item
         })
         url = f"{BASE_URL}/my/{character}/action/crafting"
-        response = await make_post_request(url=url, headers=headers, data=json_data)
+        response = await make_post_request(
+            url=url, headers=headers, data=json_data
+        )
 
     elif action in ["equip", "unequip"]:
         headers = build_headers(POST)
@@ -113,7 +119,9 @@ async def send_request(
             "slot": slot
         }
         json_data = json.dumps(data)
-        response = await make_post_request(url=url, headers=headers, data=json_data)
+        response = await make_post_request(
+            url=url, headers=headers, data=json_data
+        )
 
     elif action == "item_info":
         headers = build_headers(GET)
@@ -129,7 +137,9 @@ async def send_request(
             "quantity": quantity
         }
         json_data = json.dumps(data)
-        response = await make_post_request(url=url, headers=headers, data=json_data)
+        response = await make_post_request(
+            url=url, headers=headers, data=json_data
+        )
 
     elif action == "char_data":
         enabled_logging = False
@@ -154,7 +164,9 @@ async def send_request(
         headers = build_headers(GET)
         url = f"{BASE_URL}/monsters"
         params = {"size": 100}
-        response = await make_get_request(url=url, headers=headers, params=params)
+        response = await make_get_request(
+            url=url, headers=headers, params=params
+        )
 
     elif action == "get_all_resources":
         enabled_logging = False
