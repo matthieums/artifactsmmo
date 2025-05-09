@@ -44,7 +44,6 @@ class Character():
         self.inventory = inventory
         self.max_items = max_items
         self.combat = combat
-        self.task_queue = deque()
         self.cooldown_duration = 0
         self.cooldown_expiration = None
         self.bank = None
