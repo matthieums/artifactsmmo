@@ -95,7 +95,7 @@ class Bank(ItemContainer):
             character: "Character",
             item: str,
             quantity: int
-        ) -> int:
+    ) -> int:
         action = "withdraw"
 
         free_space = character.inventory.free_space()

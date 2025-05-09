@@ -117,7 +117,9 @@ class Character():
                 print(f"{self.name} has moved to {location}...")
                 self.update_position(location)
                 data = response.json()
-                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+                await self.handle_cooldown(
+                    data["data"]["cooldown"]["total_seconds"]
+                )
                 return response
             logger.error("Error during move function")
 
@@ -204,7 +206,7 @@ class Character():
                         self.name,
                         action,
                         location
-                        )
+                    )
                 data = response.json()
                 looted_items = data["data"]["details"]["items"]
 
