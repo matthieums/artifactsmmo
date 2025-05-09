@@ -53,7 +53,12 @@ class Bank(ItemContainer):
         else:
             raise Exception("Problem during bank initialization")
 
-    async def deposit(self, character: "Character", item: str, quantity: int) -> int:
+    async def deposit(
+        self,
+        character: "Character",
+        item: str,
+        quantity: int
+    ) -> int:
         action = "deposit"
         available = character.inventory.get(item)
 
@@ -80,10 +85,17 @@ class Bank(ItemContainer):
                 self.add(item, quantity)
             character.inventory.remove(item, deposit_amount)
             data = response.json()
-            await character.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            await character.handle_cooldown(
+                data["data"]["cooldown"]["total_seconds"]
+                )
             return 1
 
-    async def withdraw(self, character: "Character", item: str, quantity: int) -> int:
+    async def withdraw(
+            self,
+            character: "Character",
+            item: str,
+            quantity: int
+        ) -> int:
         action = "withdraw"
 
         free_space = character.inventory.free_space()
@@ -106,7 +118,9 @@ class Bank(ItemContainer):
                 self.remove(item, quantity)
             data = response.json()
             print(f"{character} withdrew {withdraw_amount} {item}")
-            await character.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            await character.handle_cooldown(
+                data["data"]["cooldown"]["total_seconds"]
+                )
 
     def remove(self, item, quantity):
         inventory = self.inventory
