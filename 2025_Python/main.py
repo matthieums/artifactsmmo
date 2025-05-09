@@ -16,6 +16,7 @@ async def create_instance():
     characters = await initialize_characters(bank)
     state.characters = characters
     task_manager = await initialize_task_manager()
+    await initialize_data()
 
     logger.info("Initialization complete.")
 

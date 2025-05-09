@@ -80,3 +80,19 @@ async def initialize_task_manager():
 
     logger.info("Task manager initialized")
     return task_manager
+
+
+async def initialize_data():
+    # initialize monsters
+    logger.info("Initialiazing data...")
+
+    response = await send_request(action="get_all_monsters")
+    monster_data = response.json()["data"]
+    response = await send_request(action="get_all_resources")
+    resources_data = response.json()["data"]
+
+    monsters.update(monster["code"] for monster in monster_data)
+    resources.update(resource["code"] for resource in resources_data)
+
+    logger.info("Data initialized...")
+    return
