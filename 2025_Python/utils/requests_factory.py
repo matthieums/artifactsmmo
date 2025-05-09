@@ -59,6 +59,8 @@ async def send_request(
     location: Optional[str] = None, item: Optional[str] = None,
     slot: Optional[str] = None, quantity: Optional[int] = None
 ) -> tuple:
+    
+    enabled_logging = True
 
     if action in ["move", "map_data"]:
         x, y = locations[location]
@@ -130,21 +132,25 @@ async def send_request(
         response = await make_post_request(url=url, headers=headers, data=json_data)
 
     elif action == "char_data":
+        enabled_logging = False
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/characters"
         response = await make_get_request(url=url, headers=headers)
 
     elif action == "bank_details":
+        enabled_logging = False
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/bank"
         response = await make_get_request(url=url, headers=headers)
 
     elif action == "bank_items":
+        enabled_logging = False
         headers = build_headers(GET)
         url = f"{BASE_URL}/my/bank/items"
         response = await make_get_request(url=url, headers=headers)
 
-    elif action == "monster_data":
+    elif action == "get_all_monsters":
+        enabled_logging = False
         headers = build_headers(GET)
         url = f"{BASE_URL}/monsters/get"
         data = {
@@ -153,7 +159,7 @@ async def send_request(
         json_data = json.dumps(data)
         response = await make_get_request(url=url, headers=headers, data=data)
 
-    if response.is_success:
+    if response.is_success and enabled_logging:
         format_action_message(character, action, location)
 
     return response
