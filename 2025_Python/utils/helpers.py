@@ -1,4 +1,7 @@
-from data import lootable_from
+from data import lootable_from, monsters, resources
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def subtract_dicts(dict1, dict2):
@@ -25,6 +28,11 @@ async def find_on_map(item: str) -> str:
 
 def determine_action(location: str) -> str:
     if location in monsters:
+        logger.debug("Resource found in Monsters")
         return "fight"
     elif location in resources:
+        logger.debug("Resource found in locations")
         return "gather"
+    else:
+        logger.error("Resource not found")
+        raise ValueError("The location is neither a monster nor a resource")
