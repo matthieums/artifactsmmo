@@ -2,7 +2,10 @@ from __future__ import annotations
 import asyncio
 import config
 import logging
-from utils.initialization import initialize_bank, initialize_characters, initialize_task_manager
+from utils.initialization import (
+    initialize_bank, initialize_characters,
+    initialize_task_manager, initialize_data
+)
 import state
 
 logger = logging.getLogger(__name__)
