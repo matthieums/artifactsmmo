@@ -117,7 +117,7 @@ class Character():
                 print(f"{self.name} has moved to {location}...")
                 self.update_position(location)
                 data = response.json()
-                await self.handle_cooldown(data)
+                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
                 return response
             logger.error("Error during move function")
 
