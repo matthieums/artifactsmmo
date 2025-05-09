@@ -1,5 +1,5 @@
 from errors import InventoryFullError, ItemNotFoundError
-from models import Item
+from models import Item, Bank
 from collections import defaultdict
 import logging
 
@@ -13,7 +13,7 @@ class Inventory:
         self.max_capacity = max_capacity
 
     @classmethod
-    def from_data(cls, data: list) -> Inventory:
+    def from_data(cls, data: list) -> "Inventory":
         return cls(
             slots=defaultdict(int, {
                 slot["code"]: slot["quantity"]
@@ -43,7 +43,7 @@ class Inventory:
             print(f"No more {item} in {self.owner}'s inventory")
         return 1
 
-    async def empty(self, bank: Bank, keep: list | None):
+    async def empty(self, bank: "Bank", keep: list | None):
         """Empty the inventory in the bank."""
         keep = keep or []
 
