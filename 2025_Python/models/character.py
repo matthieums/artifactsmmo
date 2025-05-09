@@ -8,7 +8,6 @@ from models import Item
 from models.inventory import Inventory
 from models.equipment import Equipment
 from decorators import check_character_position
-from data import locations, XP_KEYS, HP_KEYS, COMBAT_KEYS
 from data.utils import handle_fight_data
 from errors import CharacterActionError
 from utils.requests_factory import send_request
