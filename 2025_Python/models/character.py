@@ -104,42 +104,6 @@ class Character():
         self.hp["hp"] = value
         return 1
 
-    async def handle_fight_data(self, response):
-        logger.info("handling fight data")
-
-        data = response.json()
-        loot = {}
-        items = {}
-        fight_data = data['data']['fight']
-        fight_result = fight_data['result']
-
-        if fight_result == "loss":
-            self.update_position("spawn")
-            print(f"{self.name} has died")
-            await self.handle_response_cooldown(data)
-
-        print(f"{self.name} has won the fight")
-        loot["gold"] = self.update_gold(fight_data["gold"])
-        logger.info("GOLD updated")
-
-        if fight_data["drops"]:
-            for item in fight_data["drops"]:
-                item_name, quantity = self.update_inventory(action="looted", item=item)
-                items[item_name] = quantity
-            loot["items"] = items
-            logger.info("INVENTORY updated")
-
-        loot["xp"] = fight_data.get("xp")
-
-        self.update_hp(data["data"]["character"]["hp"])
-        logger.info("HP updated")
-
-        format_loot_message(self.name, loot)
-
-        await self.handle_response_cooldown(data)
-
-        return 1
-
     async def move_to(self, location: str) -> int:
         try:
             response = await send_request(self.name, action="move", location=location)
@@ -180,7 +144,7 @@ class Character():
                 self.update_position("spawn")
                 self.move_to(location)
 
-            await self.handle_fight_data(response)
+            await handle_fight_data(self, response)
             await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
 
     async def rest(self):
