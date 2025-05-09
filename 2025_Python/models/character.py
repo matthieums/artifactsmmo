@@ -104,7 +104,11 @@ class Character():
 
     async def move_to(self, location: str) -> int:
         try:
-            response = await send_request(self.name, action="move", location=location)
+            response = await send_request(
+                self.name,
+                action="move",
+                location=location
+            )
         except Exception as e:
             logger.error(f"Error in move method: {str(e)}")
             return 1
@@ -130,7 +134,11 @@ class Character():
             await self.rest()
 
         try:
-            response = await send_request(self.name, action=action, location=location)
+            response = await send_request(
+                self.name,
+                action=action,
+                location=location
+            )
         except Exception as e:
             logger.error(f"Error in fight method: {str(e)}")
             return
@@ -143,7 +151,9 @@ class Character():
                 self.move_to(location)
 
             await handle_fight_data(self, response)
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            await self.handle_cooldown(
+                data["data"]["cooldown"]["total_seconds"]
+                )
 
     async def rest(self):
         try:
@@ -155,14 +165,21 @@ class Character():
             self.update_hp(self.hp["max_hp"])
 
             data = response.json()
-            await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+            await self.handle_cooldown(
+                data["data"]["cooldown"]["total_seconds"]
+                )
             return 1
 
     def is_at_location(self, location: str):
         return self.position == locations[location]
 
     @check_character_position
-    async def gather(self, quantity: int, resource: str, location: str = None) -> int:
+    async def gather(
+        self,
+        quantity: int,
+        resource: str,
+        location: str = None
+    ) -> int:
         action = determine_action(location)
         remaining = quantity
 
@@ -171,14 +188,23 @@ class Character():
 
         while remaining > 0:
             try:
-                response = await send_request(self.name, action=action, location=location)
+                response = await send_request(
+                    self.name,
+                    action=action,
+                    location=location
+                    )
             except Exception as e:
-                logging.error(f"Action '{action}' failed for {self.name} at {location}. \n{e}")
+                logging.error(f"Action '{action}' failed for {self.name} at"
+                              f"{location}. \n{e}")
                 return 0
             else:
                 if not response.is_success:
-                    raise CharacterActionError(response, self.name, action, location)
-
+                    raise CharacterActionError(
+                        response,
+                        self.name,
+                        action,
+                        location
+                        )
                 data = response.json()
                 looted_items = data["data"]["details"]["items"]
 
@@ -189,7 +215,9 @@ class Character():
                     if code == resource:
                         remaining -= qty
 
-                await self.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
+                await self.handle_cooldown(
+                    data["data"]["cooldown"]["total_seconds"]
+                    )
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()
@@ -217,15 +245,21 @@ class Character():
         # Craft immediately if all items are inventory
 
         if self.inventory.contains_everything(needed):
-            logger.debug(f"{self}'s inventory contains everything for crafting {item_code}")
+            logger.debug(f"{self}'s inventory contains everything for crafting"
+                         f"{item_code}")
             if self.position != locations[item_object.skill]:
                 await self.move_to(item_object.skill)
 
             for _ in range(quantity):
                 try:
-                    response = await send_request(character=self.name, action=action, item=item_code)
+                    response = await send_request(
+                        character=self.name,
+                        action=action,
+                        item=item_code
+                        )
                 except Exception as e:
-                    logger.error(f"{self.name} failed to craft {item_code}. \n{e}")
+                    logger.error(f"{self.name} failed to craft {item_code}."
+                                 f"\n{e}")
                     logger.error("response: ", response.text)
                 else:
                     data = response.json()["data"]
@@ -233,11 +267,17 @@ class Character():
                     for code, qty in ingredients_needed.items():
                         self.update_inventory(code, -qty)
                     for result_data in data["details"]["items"]:
-                        self.update_inventory(result_data.get("code"), result_data.get("quantity"))
-                    await self.handle_cooldown(data["cooldown"]["total_seconds"])
+                        self.update_inventory(
+                            result_data.get("code"),
+                            result_data.get("quantity")
+                            )
+                    await self.handle_cooldown(
+                        data["cooldown"]["total_seconds"]
+                        )
             return 1
 
-        logger.debug(f"{self}'s inventory misses ingredients for crafting {item_code}")
+        logger.debug(f"{self}'s inventory misses ingredients for crafting"
+                     f"{item_code}")
 
         space_needed = sum(needed.values())
 
@@ -246,14 +286,20 @@ class Character():
                 await self.empty_inventory()
                 return await self.craft(**kwargs)
             else:
-                logger.error(f"Not enough space in inventory to craft")
-                return ValueError(f"Too many items for {self}'s inventory capacity")
+                logger.error("Not enough space in inventory to craft")
+                return ValueError(
+                    f"Too many items for {self}'s inventory capacity"
+                    )
 
         available_in_inventory = self.inventory.available(needed)
 
-        logger.debug(f"{self} already has {available_in_inventory} in his inventory")
+        logger.debug(
+            f"{self} already has {available_in_inventory} in his inventory")
 
-        self.update_based_on_available_resources(available_in_inventory, needed)
+        self.update_based_on_available_resources(
+            available_in_inventory,
+            needed
+            )
 
         logger.debug(f"{self} needs {needed}")
 
@@ -288,7 +334,11 @@ class Character():
             await self.gather(quantity=quantity, resource=code)
         return await self.craft(**kwargs)
 
-    def update_based_on_available_resources(self, available: dict, materials: dict) -> dict:
+    def update_based_on_available_resources(
+            self,
+            available: dict,
+            materials: dict
+            ) -> dict:
         missing_from_source = subtract_dicts(materials, available)
         return missing_from_source
 
