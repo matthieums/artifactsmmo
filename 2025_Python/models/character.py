@@ -1,6 +1,6 @@
 from __future__ import annotations
 import asyncio
-from data import locations, SLOT_KEYS, XP_KEYS, HP_KEYS, COMBAT_KEYS
+from data import locations, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import logging
 from typing import TYPE_CHECKING, Optional
 
