@@ -1,6 +1,6 @@
 from __future__ import annotations
 import asyncio
-from data import locations, XP_KEYS, HP_KEYS, COMBAT_KEYS
+from data import maps, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import logging
 from typing import TYPE_CHECKING, Optional
 
@@ -124,7 +124,7 @@ class Character():
             logger.error("Error during move function")
 
     def update_position(self, location):
-        self.position = locations[location]
+        self.position = maps[location]
 
     @check_character_position
     async def fight(self, location: str) -> int:
@@ -173,7 +173,7 @@ class Character():
             return 1
 
     def is_at_location(self, location: str):
-        return self.position == locations[location]
+        return self.position == maps[location]
 
     @check_character_position
     async def gather(
@@ -248,7 +248,7 @@ class Character():
         if self.inventory.contains_everything(needed):
             logger.debug(f"{self}'s inventory contains everything for crafting"
                          f"{item_code}")
-            if self.position != locations[item_object.skill]:
+            if self.position != maps[item_object.skill]:
                 await self.move_to(item_object.skill)
 
             for _ in range(quantity):

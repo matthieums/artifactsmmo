@@ -1,26 +1,3 @@
-locations = {
-    'test_location': [786, 899],
-
-    'spawn': [0, 0],
-    'chicken': [0, 1],
-    'cows': [0, 2],
-    'green_slime': [0, -1],
-    'blue_slime': [2, -1],
-    'red_slime': [1, -1],
-    'yellow_slime': [4, -1],
-
-    'ash_tree': [-1, 0],
-    'copper_rocks': [2, 0],
-    'iron_rocks': [1, 7],
-
-    'weaponcrafting': [2, 1],
-    'mining': [1, 5],
-    'bank': [4, 1],
-    'gearcrafting': [3, 1],
-    'woodcutting': [-2, -3],
-    'jewelrycrafting': [1, 3]
-}
-
 reverse_locations = {
     (786, 899): 'test_location',
     (0, 0): 'spawn',

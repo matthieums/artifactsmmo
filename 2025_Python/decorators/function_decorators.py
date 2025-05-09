@@ -1,6 +1,6 @@
 from functools import wraps
 from utils.helpers import find_on_map
-from data import locations, bank_actions
+from data import maps, bank_actions
 import inspect
 import logging
 
@@ -30,7 +30,7 @@ def check_character_position(f):
             logger.error("Triggered missing location error")
             raise RuntimeError('Missing location')
 
-        if self.position != locations[required_position]:
+        if self.position != maps[required_position]:
             await self.move_to(required_position)
 
         if inspect.iscoroutinefunction(f):

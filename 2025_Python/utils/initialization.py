@@ -93,6 +93,15 @@ async def initialize_data():
     response = await send_request(action="get_all_resources")
     resources_data = response.json()["data"]
 
+    # For the following line, responses is a list, because each item 
+    # contains a page
+    responses = await send_request(action="get_all_maps")
+    maps_data = list(
+        itertools.chain.from_iterable(
+            response.json()["data"]for response in responses
+            )
+        )
+
     monsters.update(monster["code"] for monster in monster_data)
     resources.update(resource["code"] for resource in resources_data)
     drops.update({
@@ -100,6 +109,13 @@ async def initialize_data():
             for entity in monster_data + resources_data
             for drop in entity["drops"]
         })
+
+    for map in maps_data:
+        content = map.get("content")
+        if content:
+            code = content.get("code")
+            coords = (map.get("x"), map.get("y"))
+            maps[code].append(coords)
 
     logger.info("Data initialized...")
     return

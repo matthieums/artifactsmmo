@@ -1,6 +1,6 @@
 import config
 import json
-from data import locations
+from data import maps
 from typing import Optional
 import httpx
 from utils.feedback import format_action_message
@@ -61,11 +61,11 @@ async def send_request(
     location: Optional[str] = None, item: Optional[str] = None,
     slot: Optional[str] = None, quantity: Optional[int] = None
 ) -> tuple:
-    
+
     enabled_logging = True
 
     if action in ["move", "map_data"]:
-        x, y = locations[location]
+        x, y = maps[location]
 
         if action == "move":
             headers = build_headers(POST)
@@ -127,7 +127,6 @@ async def send_request(
         headers = build_headers(GET)
         url = f"{BASE_URL}/items/{item}"
         response = await make_get_request(url=url, headers=headers)
-        return response
 
     elif action in ["withdraw", "deposit", "empty_inventory"]:
         headers = build_headers(POST)
@@ -173,9 +172,24 @@ async def send_request(
         headers = build_headers(GET)
         url = f"{BASE_URL}/resources"
         params = {"size": 100}
-        response = await make_get_request(url=url, headers=headers)
+        response = await make_get_request(
+            url=url, headers=headers, params=params
+        )
 
-    if response.is_success and enabled_logging:
+    elif action == "get_all_maps":
+        enabled_logging = False
+        headers = build_headers(GET)
+        url = f"{BASE_URL}/maps"
+        responses = []
+        for i in range(1, 5):
+            params = {"page": i, "size": 100}
+            response = await make_get_request(
+                url=url, headers=headers, params=params
+            )
+            responses.append(response)
+        response = responses
+
+    if enabled_logging and response.is_success:
         format_action_message(character, action, location)
 
     return response
