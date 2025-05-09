@@ -152,12 +152,16 @@ async def send_request(
     elif action == "get_all_monsters":
         enabled_logging = False
         headers = build_headers(GET)
-        url = f"{BASE_URL}/monsters/get"
-        data = {
-            "code": location,
-        }
-        json_data = json.dumps(data)
-        response = await make_get_request(url=url, headers=headers, data=data)
+        url = f"{BASE_URL}/monsters"
+        params = {"size": 100}
+        response = await make_get_request(url=url, headers=headers, params=params)
+
+    elif action == "get_all_resources":
+        enabled_logging = False
+        headers = build_headers(GET)
+        url = f"{BASE_URL}/resources"
+        params = {"size": 100}
+        response = await make_get_request(url=url, headers=headers)
 
     if response.is_success and enabled_logging:
         format_action_message(character, action, location)
