@@ -58,11 +58,11 @@ async def initialize_bank():
         return bank
 
 
-async def initialize_task_manager(characters: list[Character]):
+async def initialize_task_manager():
     logger.info("Initializing task manager")
 
     task_manager = TaskManager()
-    load_character_tasks(task_manager, characters)
+    load_character_tasks(task_manager)
 
     logger.info("Task manager initialized")
     return task_manager
