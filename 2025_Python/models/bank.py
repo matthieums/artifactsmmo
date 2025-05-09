@@ -53,7 +53,7 @@ class Bank(ItemContainer):
         else:
             raise Exception("Problem during bank initialization")
 
-    async def deposit(self, character: Character, item: str, quantity: int) -> int:
+    async def deposit(self, character: "Character", item: str, quantity: int) -> int:
         action = "deposit"
         available = character.inventory.get(item)
 
@@ -83,7 +83,7 @@ class Bank(ItemContainer):
             await character.handle_cooldown(data["data"]["cooldown"]["total_seconds"])
             return 1
 
-    async def withdraw(self, character: Character, item: str, quantity: int) -> int:
+    async def withdraw(self, character: "Character", item: str, quantity: int) -> int:
         action = "withdraw"
 
         free_space = character.inventory.free_space()
@@ -136,14 +136,14 @@ class Bank(ItemContainer):
                 available[code] = qty
         return available
 
-    async def reserve(self, booker: Character, items):
+    async def reserve(self, booker: "Character", items):
         for code, quantity in items.items():
             self.reserved[booker].update({code: quantity})
             self.inventory[code] -= quantity
             # reserved = {character: [{item1: qty}, {item2: qty}]}
         return
 
-    async def clear_reservation(self, booker: Character, item):
+    async def clear_reservation(self, booker: "Character", item):
         logger.debug("Clearing reservation")
         del self.reserved[booker][item]
         return
