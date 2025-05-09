@@ -1,4 +1,1 @@
-monsters = {
-    "chicken",
-    "cow",
-    }
+monsters = set()

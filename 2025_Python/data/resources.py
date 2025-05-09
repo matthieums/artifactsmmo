@@ -1,4 +1,2 @@
-resources = {
-    "copper_rocks",
-    "iron_rocks"
-}
+resources = set()
+

@@ -7,6 +7,7 @@ import math
 
 from data.monsters import monsters
 from data.resources import resources
+from data.drops import drops
 from models.bank import Bank
 from models import Character
 from utils.requests_factory import send_request
@@ -85,7 +86,6 @@ async def initialize_task_manager():
 
 
 async def initialize_data():
-    # initialize monsters
     logger.info("Initialiazing data...")
 
     response = await send_request(action="get_all_monsters")
@@ -95,6 +95,11 @@ async def initialize_data():
 
     monsters.update(monster["code"] for monster in monster_data)
     resources.update(resource["code"] for resource in resources_data)
+    drops.update({
+            drop["code"]: entity["code"]
+            for entity in monster_data + resources_data
+            for drop in entity["drops"]
+        })
 
     logger.info("Data initialized...")
     return

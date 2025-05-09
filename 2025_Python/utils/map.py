@@ -1,4 +1,4 @@
-from data import lootable_from
+from data import drops
 from utils import send_request
 import logging
 
@@ -17,7 +17,7 @@ async def get_map_data(location: str):
 
 async def find_on_map(item: str) -> str:
     """Return the map location code on which to find an item"""
-    return lootable_from[item]
+    return drops[item]
 
 
 def find_resources(items: dict) -> dict:

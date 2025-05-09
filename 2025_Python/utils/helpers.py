@@ -1,4 +1,4 @@
-from data import lootable_from, monsters, resources
+from data import drops, monsters, resources
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ def subtract_dicts(dict1, dict2):
 
 async def find_on_map(item: str) -> str:
     """Return the map location code on which to find an item"""
-    return lootable_from[item]
+    return drops[item]
 
 
 def determine_action(location: str) -> str:
