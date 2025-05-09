@@ -178,17 +178,16 @@ class Character():
     @check_character_position
     async def gather(
         self,
-        quantity: int,
         resource: str,
+        quantity: int = None,
         location: str = None
     ) -> int:
         action = determine_action(location)
-        remaining = quantity
-
-        if self.inventory.is_full():
-            await self.empty_inventory()
+        remaining = quantity or float("inf")
 
         while remaining > 0:
+            if self.inventory.is_full():
+                await self.empty_inventory()
             try:
                 response = await send_request(
                     self.name,
