@@ -103,9 +103,13 @@ class Character():
         return 1
 
     async def move_to(self, location: str) -> int:
+        if location not in maps:
+            logger.error("Undefined location")
+            raise ValueError("Map doesn't exist in data.")
+
         try:
             response = await send_request(
-                self.name,
+                self,
                 action="move",
                 location=location
             )
@@ -121,7 +125,11 @@ class Character():
                     data["data"]["cooldown"]["total_seconds"]
                 )
                 return response
-            logger.error("Error during move function")
+            elif response.status_code == 490:
+                logger.info("Character is already at destination")
+            else:
+                logger.error(f"Error during move function: {response.text}")
+
 
     def update_position(self, location):
         self.position = maps[location]

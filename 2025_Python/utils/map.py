@@ -1,6 +1,11 @@
-from data import drops
-from utils import send_request
+from __future__ import annotations
+from data import drops, maps
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from models.character import Character
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +28,7 @@ async def find_on_map(item: str) -> str:
 def find_resources(items: dict) -> dict:
     """Return a dict containing the item, its location and
     the quantity needed."""
+    from utils import send_request
     resource_locations = dict()
 
     for code, _ in items.items():
@@ -31,3 +37,19 @@ def find_resources(items: dict) -> dict:
             {location: code}
         )
         return resource_locations
+
+
+def find_closest(character: "Character", location: str) -> tuple:
+    """Finds the closest location to the character's position"""
+    options = maps.get(location)
+    x, y = character.position
+    min_distance = float("inf")
+    closest = None
+
+    for option in options:
+        a, b = option
+        distance = sum([abs(x - a), abs(y - b)])
+        if distance < min_distance:
+            closest = (a, b)
+
+    return closest

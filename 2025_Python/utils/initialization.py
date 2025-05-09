@@ -4,10 +4,12 @@ from dateutil import parser
 from tzlocal import get_localzone
 from datetime import datetime
 import math
+import itertools
 
 from data.monsters import monsters
 from data.resources import resources
 from data.drops import drops
+from data.maps import maps
 from models.bank import Bank
 from models import Character
 from utils.requests_factory import send_request

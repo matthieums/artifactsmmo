@@ -12,7 +12,7 @@ def check_character_position(f):
     requested action. If not, he is moved to the necessary position"""
     @wraps(f)
     async def wrapper(self, *args, **kwargs):
-        logger.info("Wrapper function called")
+        logger.debug("Wrapper function called")
 
         if kwargs.get("resource"):
             resource = kwargs.get("resource")

@@ -5,6 +5,7 @@ from typing import Optional
 import httpx
 from utils.feedback import format_action_message
 import logging
+from utils.map import find_closest
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +66,7 @@ async def send_request(
     enabled_logging = True
 
     if action in ["move", "map_data"]:
-        x, y = maps[location]
-
+        x, y = find_closest(character, location)
         if action == "move":
             headers = build_headers(POST)
             data = {
