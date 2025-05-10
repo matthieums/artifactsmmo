@@ -1,2 +1,2 @@
-characters = []
+characters = {}
 task_manager = None
