@@ -23,10 +23,9 @@ i_r = "iron_rocks"
 
 
 def load_character_tasks(manager: TaskManager) -> None:
-    for character in state.characters:
+    for character in state.characters.values():
         if character.is_on_cooldown():
             manager.add_task(1, character, "handle_cooldown", character.cooldown_duration)
 
-        manager.add_task(1, character, f, location=ch)
         manager.add_task(1, character, f, location=ch)
     return
