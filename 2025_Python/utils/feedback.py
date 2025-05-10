@@ -1,5 +1,11 @@
 def format_action_message(character, action, location):
-    print(f"{character} performed {action}" + (f" at {location}" if location else ""))
+    if not character:
+        return
+
+    print(
+        f"{character} performed {action}"
+        + (f" at {location}" if location else "")
+    )
     return 1
 
 
