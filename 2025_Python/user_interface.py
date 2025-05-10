@@ -30,4 +30,3 @@ def load_character_tasks(manager: TaskManager) -> None:
         manager.add_task(1, character, f, location=ch)
         manager.add_task(1, character, f, location=ch)
     return
-

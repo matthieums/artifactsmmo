@@ -7,13 +7,23 @@ from utils.initialization import (
     initialize_task_manager, initialize_data
 )
 import state
+from threading import Thread
+import uvicorn
 
 logger = logging.getLogger(__name__)
 
 
+def run_server():
+    uvicorn.run("api.server:app", host="127.0.0.1", port=8000)
+
+
 async def create_instance():
-    logger.info("initialization start...")
     config.setup_logging()
+    logger.info("initialization start...")
+
+    server_thread = Thread(target=run_server)
+    server_thread.daemon = True
+    server_thread.start()
 
     bank = await initialize_bank()
     characters = await initialize_characters(bank)
