@@ -26,6 +26,7 @@ async def send_request(
         raise KeyError("Action does not exist. Impossible request.")
 
     kwargs = {
+        "action": action,
         "character": character,
         "location": location,
         "item": item,
