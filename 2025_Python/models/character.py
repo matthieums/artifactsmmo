@@ -45,7 +45,7 @@ class Character():
         self.combat = combat
         self.cooldown_duration = 0
         self.cooldown_expiration = None
-        self.bank = None
+        self.bank = bank
 
     @classmethod
     def from_api_data(cls, data: dict, bank: Bank) -> Character:
