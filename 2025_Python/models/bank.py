@@ -35,8 +35,7 @@ class Bank(ItemContainer):
 
     @classmethod
     async def get_bank_details(cls):
-
-        response = response = await send_request(action="bank_details")
+        response = await send_request(action="bank_details")
         data = response.json()["data"]
         if response.is_success:
             data = response.json()["data"]
