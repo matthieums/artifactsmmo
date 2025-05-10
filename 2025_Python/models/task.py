@@ -25,4 +25,4 @@ class Task:
         logger.info("Task completed.")
 
     def __str__(self):
-        return f"{self.kwargs['action']}"
+        return f"{self.method.__name__}"
