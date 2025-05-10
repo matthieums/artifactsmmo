@@ -1,5 +1,5 @@
 import React from 'react';
-import { FetchCharacters } from './components/FetchCharacters';
+import { CharacterList } from './components/CharacterList';
 
 // Fetch data from my server
 // Display it
@@ -7,7 +7,7 @@ import { FetchCharacters } from './components/FetchCharacters';
 const App: React.FC = () => {
   return (
     <>
-      < FetchCharacters />
+      < CharacterList />
     </>
   );
 };
