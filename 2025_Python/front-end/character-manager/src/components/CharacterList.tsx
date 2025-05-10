@@ -4,11 +4,14 @@ import { AddTask } from "./AddTask";
 interface Character {
   id: number;
   name: string;
+  ongoing_task: string;
 }
 
+type CharactersDict = { [name: string]: Character };
+
 export function CharacterList() {
-    const [characters, setCharacters] = useState<Character[]>([]);
-    
+    const [characters, setCharacters] = useState<CharactersDict>({});
+
     useEffect(() => {
         let interval: NodeJS.Timeout;
 
@@ -18,9 +21,6 @@ export function CharacterList() {
                 const data = await response.json();
                 setCharacters(data);
                 
-                if (data.length > 0) {
-                    clearInterval(interval);
-                }
             } catch (err) {
                 console.error("Error fetching characters:", err);
             }
@@ -29,10 +29,7 @@ export function CharacterList() {
         fetchCharacters();
         interval = setInterval(fetchCharacters, 5000);
         
-        return () => 
-            {
-                clearInterval(interval)
-            };
+        return () => { clearInterval(interval) };
     }, []);
 
 
@@ -41,12 +38,12 @@ export function CharacterList() {
            <div>
                <h3>Characters:</h3>
                 <ul>
-                    {characters.map((char, index) => (
-                        <li key={index}>
-                            {char.name}
-                            < AddTask characterIndex={index}/>
-                        </li>
-                    ))}
+                {Object.values(characters).map((char, index) => (
+                    <li key={index}>
+                    {char.name} - {char.ongoing_task}
+                    <AddTask characterName={char.name} />
+                    </li>
+                ))}
                 </ul>
            </div>
        </div>

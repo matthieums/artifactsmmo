@@ -1,10 +1,10 @@
 import React from "react";
 
 interface AddTaskProps {
-  characterIndex: number;
+  characterName: string;
 }
 
-export function AddTask({characterIndex}: AddTaskProps) {
+export function AddTask({characterName}: AddTaskProps) {
     return (
         <button onClick={onclickHandler}>
             Add task
@@ -14,7 +14,7 @@ export function AddTask({characterIndex}: AddTaskProps) {
     async function onclickHandler() {
         const taskPayload = {
             iterations: 1,
-            character_index: characterIndex,
+            character_name: characterName,
             function: "gather",
             args: [],
             kwargs: {

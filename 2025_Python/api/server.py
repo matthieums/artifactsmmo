@@ -26,7 +26,7 @@ async def get_characters():
 
 class TaskRequest(BaseModel):
     iterations: int
-    character_index: int
+    character_name: str
     function: str
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
@@ -35,7 +35,7 @@ class TaskRequest(BaseModel):
 @app.post("/task")
 async def task(request: TaskRequest):
     iterations = request.iterations
-    character = state.characters[request.character_index]
+    character = state.characters[request.character_name]
     function = request.function
     args = request.args
     kwargs = request.kwargs
