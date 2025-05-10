@@ -1,4 +1,5 @@
-from models import Character
+import state
+from models.task_manager import TaskManager
 
 g = "gather"
 d= "deposit"
@@ -11,7 +12,7 @@ t_e = "toggle_equipped"
 c_r = "copper_rocks"
 a_w = "ash_wood"
 a_t = "ash_tree"
-ch = "chickens"
+ch = "chicken"
 a_p = "ash_plank"
 w_s = "wooden_shield"
 e_i = "empty_inventory"
@@ -21,36 +22,12 @@ co = "copper"
 i_r = "iron_rocks"
 
 
-def load_character_tasks(characters: list[Character]) -> None:
-    for character in characters:
+def load_character_tasks(manager: TaskManager) -> None:
+    for character in state.characters:
         if character.is_on_cooldown():
-            character.add_task(1, "handle_cooldown", character.cooldown_duration)
+            manager.add_task(1, character, "handle_cooldown", character.cooldown_duration)
 
-        character.add_task(1, f, location=ch)
-        character.add_task(1, f, location=ch)
+        manager.add_task(1, character, f, location=ch)
+        manager.add_task(1, character, f, location=ch)
     return
 
-    
-# if craft, add the skill
-    # item_data = await get_item_info(*args)
-    # required_position = item_data["data"]["craft"]["skill"]
-
-
-        #     # character.add_task(1, g, location=i_r)
-
-        #     # character.add_task(1, w, item=c_o, quantity=100)
-            # character.add_task(1, e_i)
-            # character.add_task(1, w, item=c_o, quantity=100)
-            # character.add_task(1, cr, co, quantity=10)
-            # character.add_task(1, e_i)
-            # character.add_task(1, w, item=c_o, quantity=100)
-            # character.add_task(1, cr, co, quantity=10)
-            # character.add_task(None, cr, co)
-
-            # character.add_task(None, g, location=i_r)
-            # character.add_task(None, cr, co)
-            # character.add_task(None, cr, co)
-            # character.add_task(None, g, location=i_r)
-            # character.add_task(None, e_i)
-
-            # tg.create_task(character.run_tasks())
