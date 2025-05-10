@@ -18,12 +18,12 @@ async def create_instance():
     bank = await initialize_bank()
     characters = await initialize_characters(bank)
     state.characters = characters
-    task_manager = await initialize_task_manager()
+    state.task_manager = await initialize_task_manager()
     await initialize_data()
 
     logger.info("Initialization complete.")
 
-    await task_manager.run_queues(characters)
+    await state.task_manager.run_queues(characters)
 
 if __name__ == "__main__":
     asyncio.run(create_instance())
