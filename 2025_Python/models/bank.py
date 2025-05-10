@@ -170,3 +170,6 @@ class Bank(ItemContainer):
 
     def __str__(self):
         return "bank"
+
+    def __repr__(self):
+        return f"{self.inventory}"

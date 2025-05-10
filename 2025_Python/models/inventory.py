@@ -106,3 +106,6 @@ class Inventory:
 
     def __contains__(self, item):
         return item in self.slots
+
+    def __str__(self):
+        return f"{self.slots}"
