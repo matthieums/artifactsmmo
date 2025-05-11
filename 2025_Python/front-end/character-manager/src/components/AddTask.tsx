@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiFetch } from "../utils";
 
 interface AddTaskProps {
   characterName: string;
@@ -36,19 +37,13 @@ export function AddTask({ characterName, taskName, kwargs }: AddTaskProps) {
         };
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/task", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(taskPayload)
+            await apiFetch("/task", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(taskPayload)
             });
-
-            const result = await response.json();
-            console.log(result);
         } catch (error) {
             console.error("Error submitting task:", error);
         }
-
     }
 }

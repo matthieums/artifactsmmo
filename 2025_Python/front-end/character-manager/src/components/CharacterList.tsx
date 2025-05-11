@@ -4,6 +4,8 @@ import { TaskQueueViewer } from "./TaskQueueViewer";
 import { Task, TaskQueue } from "../types/task";
 import { CharactersDict } from "../types/character";
 import { CharacterImage } from "./CharacterImage";
+import { apiFetch } from "../utils"
+
 
 export function CharacterList() {
     const [characters, setCharacters] = useState<CharactersDict>({});
@@ -17,8 +19,7 @@ export function CharacterList() {
     useEffect(() => {
         const fetchTaskQueues = async () => {
             try {
-                const response = await fetch("http://127.0.0.1:8000/task_queues");
-                const data = await response.json();
+                const data = await apiFetch("/task_queues");
                 setTaskQueues(data);
             } catch(err) {
                 console.error("Error while fetching task queue", err);
@@ -27,8 +28,7 @@ export function CharacterList() {
         
         const fetchCharacters = async () => {
             try {
-                const response = await fetch("http://127.0.0.1:8000/characters");
-                const data = await response.json();
+                const data = await apiFetch("/characters");
                 setCharacters(data);
             } catch (err) {
                 console.error("Error fetching characters:", err);
