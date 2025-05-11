@@ -2,12 +2,20 @@ import React from "react";
 
 interface AddTaskProps {
   characterName: string;
+    taskName: string;
+    iterations: number
+  kwargs: {
+    resource?: string;
+    target?: string;
+    location?: string;
+    quantity?: number;
+  };
 }
 
-export function AddTask({characterName}: AddTaskProps) {
+export function AddTask({ characterName, iterations, taskName, kwargs }: AddTaskProps) {
     return (
         <button onClick={onclickHandler}>
-            Add task
+            {`Add  ${iterations}x ${taskName} ${Object.values(kwargs)}`}
         </button>
     )
 
@@ -15,12 +23,9 @@ export function AddTask({characterName}: AddTaskProps) {
         const taskPayload = {
             iterations: 1,
             character_name: characterName,
-            function: "gather",
+            task_name: taskName,
             args: [],
-            kwargs: {
-                quantity: 2,
-                resource: "copper_ore"
-            }
+            kwargs: kwargs
         };
 
         try {
