@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class TaskManager:
     def __init__(self):
-        self.task_queue = defaultdict(deque)
+        self.task_queues = defaultdict(deque)
 
     @staticmethod
     def create_task(
@@ -28,15 +28,15 @@ class TaskManager:
 
     def enqueue_task(self, character: Character, iterations: int, task: Task) -> None:
         for _ in range(iterations):
-            self.task_queue[character].append(task)
+            self.task_queues[character].append(task)
 
     def add_task(self, iterations: int, character: Character, method_name: str, *args, **kwargs) -> None:
         task = self.create_task(character, method_name, *args, **kwargs)
         self.enqueue_task(character, iterations, task)
 
     async def start_tasks(self, character: Character):
-        while self.task_queue[character]:
-            task = self.task_queue[character].popleft()
+        while self.task_queues[character]:
+            task = self.task_queues[character].popleft()
             self.set_ongoing_task(character, task)
             await task.run()
 
