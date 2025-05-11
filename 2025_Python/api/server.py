@@ -1,10 +1,17 @@
 from fastapi import FastAPI
-import state
+from fastapi.middleware.cors import CORSMiddleware
 import logging
+
+import state
 from .models import TaskRequest
+import config
 
 logger = logging.getLogger(__name__)
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    **config.CORS_CONFIG
+)
 
 
 @app.get("/characters")
