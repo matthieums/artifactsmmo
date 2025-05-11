@@ -33,6 +33,8 @@ class Character():
         max_items: int,
         combat: dict,
         bank: Optional[Bank] = None,
+        ongoing_task: Optional[str] = None,
+        skin: Optional[str] = None
     ) -> None:
         self.name = name
         self.hp = hp
@@ -45,6 +47,8 @@ class Character():
         self.combat = combat
         self.cooldown_duration = 0
         self.cooldown_expiration = None
+        self.ongoing_task = ongoing_task
+        self.skin = skin
         self.bank = bank
 
     @property
@@ -66,7 +70,8 @@ class Character():
             inventory=inventory,
             max_items=data.get("inventory_max_items"),
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
-            bank=bank
+            bank=bank,
+            skin=data.get("skin")
         )
 
         inventory.owner = character
