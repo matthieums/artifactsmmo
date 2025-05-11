@@ -1,22 +1,11 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import state
-from pydantic import BaseModel
-from typing import List, Any, Dict
 import logging
 
 
 logger = logging.getLogger(__name__)
-
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 @app.get("/")
