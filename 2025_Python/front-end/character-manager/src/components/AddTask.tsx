@@ -1,27 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface AddTaskProps {
   characterName: string;
     taskName: string;
-    iterations: number
   kwargs: {
     resource?: string;
-    target?: string;
     location?: string;
     quantity?: number;
   };
 }
 
-export function AddTask({ characterName, iterations, taskName, kwargs }: AddTaskProps) {
+export function AddTask({ characterName, taskName, kwargs }: AddTaskProps) {
+    const [iterations, setIterations] = useState<number>(1)
+    
     return (
-        <button onClick={onclickHandler}>
-            {`Add  ${iterations}x ${taskName} ${Object.values(kwargs)}`}
-        </button>
+        <div>
+            <input 
+                type="number"
+                value={iterations}
+                onChange={(e) => setIterations(Number(e.target.value))}
+             />
+            <button onClick={onclickHandler}>
+                {`Add ${taskName} ${Object.values(kwargs)}`}
+            </button>
+        </div>
     )
 
     async function onclickHandler() {
         const taskPayload = {
-            iterations: 1,
+            iterations: iterations,
             character_name: characterName,
             task_name: taskName,
             args: [],

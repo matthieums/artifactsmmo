@@ -20,7 +20,6 @@ def run_server():
 async def create_instance():
     config.setup_logging()
     logger.info("initialization start...")
-    config.setup_CORS()
     server_thread = Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()

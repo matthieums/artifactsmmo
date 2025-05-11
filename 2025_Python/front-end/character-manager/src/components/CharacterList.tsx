@@ -52,22 +52,22 @@ export function CharacterList() {
                 <h3>Characters:</h3>
             </div>
             {Object.values(characters).map((char) => (
-            <div key={char.name}>
+            <div key={char.name}>{char.name}
                 <CharacterImage source={`https://artifactsmmo.com/images/characters/${char.skin}.png/`} />
-                {char.name} - {`${char.ongoing_task}..`}
-                    <input type="number" />
-                    {tasks.map((t, i) => (
-                        <AddTask 
-                        key={i}
-                        iterations={2}
-                        characterName={char.name}
-                        taskName={t.taskName}
-                        kwargs={t.kwargs}
-                        />
-                    ))}
+                 <div>{`${char.ongoing_task}..`}</div>
                     <div>
-                        <TaskQueueViewer queue={taskQueues[char.name]}/>
+                        {tasks.map((t, i) => (
+                            <AddTask
+                            key={i}
+                            characterName={char.name}
+                            taskName={t.taskName}
+                            kwargs={t.kwargs}
+                            />
+                        ))}
                     </div>
+                <div>
+                    <TaskQueueViewer queue={taskQueues[char.name]}/>
+                </div>
             </div>
             ))}
 
