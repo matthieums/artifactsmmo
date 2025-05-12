@@ -1,17 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Any, Dict
 
 
-class TaskRequest(BaseModel):
+class BaseTaskRequest(BaseModel):
     iterations: int
+    task_name: str
+    args: List[Any] = Field(default_factory=list)
+    kwargs: Dict[str, Any] = Field(default_factory=dict)
+
+
+class TaskRequest(BaseTaskRequest):
     character_name: str
-    task_name: str
-    args: List[Any] = []
-    kwargs: Dict[str, Any] = {}
 
 
-class GroupTaskRequest(BaseModel):
-    iterations: int
-    task_name: str
-    args: List[Any] = []
-    kwargs: Dict[str, Any] = {}
+class GroupTaskRequest(BaseTaskRequest):
+    pass
