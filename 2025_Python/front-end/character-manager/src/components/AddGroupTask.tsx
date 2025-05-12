@@ -3,7 +3,7 @@ import { apiFetch } from "../utils";
 
 interface AddGroupTaskProps {
     taskName: string;
-  kwargs: {
+  kwargs?: {
     resource?: string;
     location?: string;
     quantity?: number;
@@ -21,7 +21,7 @@ export function AddGroupTask({taskName, kwargs }: AddGroupTaskProps) {
                 onChange={(e) => setIterations(Number(e.target.value))}
              />
             <button onClick={onclickHandler}>
-                {`Add ${taskName} ${Object.values(kwargs)}`}
+                {`Add ${taskName} ${Object.values(kwargs?? {})}`}
             </button>
         </div>
     )

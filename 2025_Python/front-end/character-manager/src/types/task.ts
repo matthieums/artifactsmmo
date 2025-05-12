@@ -1,7 +1,7 @@
 export interface Task {
   taskName: string;
   iterations: number
-  kwargs: {
+  kwargs?: {
     resource?: string;
     location?: string;
     quantity?: number;

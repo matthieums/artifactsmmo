@@ -4,14 +4,14 @@ import { apiFetch } from "../utils";
 interface AddTaskProps {
   characterName: string;
     taskName: string;
-  kwargs: {
+  kwargs?: {
     resource?: string;
     location?: string;
     quantity?: number;
   };
 }
 
-export function AddTask({ characterName, taskName, kwargs }: AddTaskProps) {
+export function AddTask({ characterName, taskName, kwargs = {} }: AddTaskProps) {
     const [iterations, setIterations] = useState<number>(1)
     
     return (
