@@ -8,3 +8,10 @@ class TaskRequest(BaseModel):
     task_name: str
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
+
+
+class GroupTaskRequest(BaseModel):
+    iterations: int
+    task_name: str
+    args: List[Any] = []
+    kwargs: Dict[str, Any] = {}

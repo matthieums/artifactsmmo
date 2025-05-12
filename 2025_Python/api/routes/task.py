@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-import state
 from ..models import TaskRequest
+import state
 
 router = APIRouter()
 
