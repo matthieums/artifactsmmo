@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { AddTask } from "./AddTask";
+import { AddTask } from "./AddIndividualTask";
 import { TaskQueueViewer } from "./TaskQueueViewer";
 import { Task, TaskQueue } from "../types/task";
 import { CharactersDict } from "../types/character";
 import { CharacterImage } from "./CharacterImage";
 import { apiFetch } from "../utils"
+import { AddGroupTask } from "./AddGroupTask";
 
 
 export function CharacterList() {
@@ -51,24 +52,36 @@ export function CharacterList() {
             <div>
                 <h3>Characters:</h3>
             </div>
-            {Object.values(characters).map((char) => (
-            <div key={char.name}>{char.name}
-                <CharacterImage source={`https://artifactsmmo.com/images/characters/${char.skin}.png/`} />
-                 <div>{`${char.ongoing_task}..`}</div>
-                    <div>
-                        {tasks.map((t, i) => (
-                            <AddTask
-                            key={i}
-                            characterName={char.name}
-                            taskName={t.taskName}
-                            kwargs={t.kwargs}
-                            />
-                        ))}
-                    </div>
-                <div>
-                    <TaskQueueViewer queue={taskQueues[char.name]}/>
-                </div>
+
+            <div>
+                <h3>Add tasks to everyone</h3>
+                {tasks.map((t, i) => (
+                    < AddGroupTask 
+                        key={i}
+                        taskName={t.taskName}
+                        kwargs={t.kwargs}      
+                    />
+                ))}
             </div>
+
+            {Object.values(characters).map((char) => (
+                <div key={char.name}>{char.name}
+                    <CharacterImage source={`https://artifactsmmo.com/images/characters/${char.skin}.png/`} />
+                    <div>{`${char.ongoing_task}..`}</div>
+                        <div>
+                            {tasks.map((t, i) => (
+                                <AddTask
+                                key={i}
+                                characterName={char.name}
+                                taskName={t.taskName}
+                                kwargs={t.kwargs}
+                                />
+                            ))}
+                        </div>
+                    <div>
+                        <TaskQueueViewer queue={taskQueues[char.name]}/>
+                    </div>
+                </div>
             ))}
 
         </div>
