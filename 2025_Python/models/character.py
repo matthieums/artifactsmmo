@@ -47,6 +47,10 @@ class Character():
         self.cooldown_expiration = None
         self.bank = bank
 
+    @property
+    def is_on_cooldown(self):
+        return self.cooldown_duration > 0
+
     @classmethod
     def from_api_data(cls, data: dict, bank: Bank) -> Character:
         inventory = Inventory.from_data(data)
@@ -67,9 +71,6 @@ class Character():
 
         inventory.owner = character
         return character
-
-    def is_on_cooldown(self):
-        return self.cooldown_duration > 0
 
     async def handle_cooldown(self, seconds: int | None = None) -> None:
         if seconds is None:
@@ -119,7 +120,7 @@ class Character():
         else:
             if response.status_code == 200:
                 print(f"{self.name} has moved to {location}...")
-                self.update_position(location)
+                self._update_position(location)
                 data = response.json()
                 await self.handle_cooldown(
                     data["data"]["cooldown"]["total_seconds"]
@@ -129,10 +130,6 @@ class Character():
                 logger.info("Character is already at destination")
             else:
                 logger.error(f"Error during move function: {response.text}")
-
-
-    def update_position(self, location):
-        self.position = maps[location]
 
     @check_character_position
     async def fight(self, location: str) -> int:
@@ -157,7 +154,7 @@ class Character():
             result = data['data']['fight']['result']
             if result == "loss":
                 logger.info(f"{self} died during a fight")
-                self.update_position("spawn")
+                self._update_position("spawn")
                 self.move_to(location)
 
             await handle_fight_data(self, response)
@@ -376,3 +373,6 @@ class Character():
 
     def __repr__(self):
         return self.name
+
+    def _update_position(self, location):
+        self.position = maps[location]
