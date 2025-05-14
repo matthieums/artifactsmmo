@@ -1,4 +1,6 @@
 from __future__ import annotations
+import subprocess
+import os
 import asyncio
 import config
 import logging
@@ -17,22 +19,62 @@ def run_server():
     uvicorn.run("api.server:app", host="127.0.0.1", port=8000)
 
 
-async def create_instance():
+def run_react_server():
+    PATH = "front-end/character-manager"
+    os.chdir(PATH)
+
+    try:
+        process = subprocess.Popen(
+            ["npm", "start"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        for line in process.stdout:
+            print(line.decode().strip())
+
+        for line in process.stderr:
+            print(f"Error: {line.decode().strip()}")
+
+        process.wait()
+        logger.info("React server started.")
+
+    except Exception as e:
+        print(f"Error starting the React server: {e}")
+
+
+async def initialize():
     config.setup_logging()
     logger.info("initialization start...")
-    server_thread = Thread(target=run_server)
-    server_thread.daemon = True
-    server_thread.start()
 
     bank = await initialize_bank()
     characters = await initialize_characters(bank)
     state.characters = {char.name: char for char in characters}
-    state.task_manager = await initialize_task_manager()
-    await initialize_data()
 
+    await initialize_data()
     logger.info("Initialization complete.")
 
-    await state.task_manager.run_queues(characters)
+    await initialize_task_manager()
+
+
+def start_server_thread():
+    server_thread = Thread(target=run_server)
+    server_thread.daemon = True
+    server_thread.start()
+    return
+
+
+def start_react_thread():
+    react_thread = Thread(target=run_react_server)
+    react_thread.daemon = True
+    react_thread.start()
+    return
+
+
+async def create_instance():
+    start_server_thread()
+    await initialize()
+    start_react_thread()
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(create_instance())
