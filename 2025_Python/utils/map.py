@@ -54,6 +54,7 @@ def find_closest(character: "Character", location: str) -> tuple:
         a, b = option
         distance = sum([abs(x - a), abs(y - b)])
         if distance < min_distance:
+            min_distance = distance
             closest = (a, b)
 
     return closest
