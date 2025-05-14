@@ -3,6 +3,7 @@ import config
 import json
 import httpx
 import logging
+import asyncio
 
 from utils.map import find_closest
 from utils.feedback import format_action_message
@@ -39,8 +40,7 @@ async def send_request(
 
     # Special case for map_data
     if isinstance(response, list):
-        if len(response) > 1:
-            return response
+        return response
 
     if response.status_code == 200:
         logger.debug("Request successful")
@@ -233,13 +233,12 @@ async def get_all_resources(*args, **kwargs):
 async def get_all_maps(*args, **kwargs):
     headers = build_headers(GET)
     url = f"{BASE_URL}/maps"
-    responses = []
-    for i in range(1, 5):
-        params = {"page": i, "size": 100}
-        response = await make_get_request(
-            url=url, headers=headers, params=params
-        )
-        responses.append(response)
+
+    async def _fetch_page(page_number):
+        params = {"page": page_number, "size": 100}
+        return await make_get_request(url=url, headers=headers, params=params)
+
+    responses = await asyncio.gather(*(_fetch_page(i) for i in range(1, 5)))
     return responses
 
 

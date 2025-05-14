@@ -88,29 +88,35 @@ async def initialize_task_manager():
 
 
 async def initialize_data():
+    async def _init_monster_data():
+        response = await send_request(action="get_all_monsters")
+        monster_data = response.json()["data"]
+        return monster_data
+
+    async def _init_resources_data():
+        response = await send_request(action="get_all_resources")
+        resources_data = response.json()["data"]
+        return resources_data
+
+    async def _init_map_data():
+        """Sends a request to get a list of responses containing all pages
+        of map data and joins them into one list."""
+        responses = await send_request(action="get_all_maps")
+        maps_data = list(
+            itertools.chain.from_iterable(
+                response.json()["data"]for response in responses
+                )
+            )
+        logger.debug(f"NUMBER OF MAPS: {len(maps_data)}")
+        return maps_data
     logger.info("Initialiazing data...")
 
-    response = await send_request(action="get_all_monsters")
-    monster_data = response.json()["data"]
-    response = await send_request(action="get_all_resources")
-    resources_data = response.json()["data"]
-
-    # For the following line, responses is a list, because each item 
-    # contains a page
-    responses = await send_request(action="get_all_maps")
-    maps_data = list(
-        itertools.chain.from_iterable(
-            response.json()["data"]for response in responses
-            )
-        )
+    monster_data, resources_data, maps_data = await asyncio.gather(
+        _init_monster_data(), _init_resources_data(), _init_map_data()
+    )
 
     monsters.update(monster["code"] for monster in monster_data)
     resources.update(resource["code"] for resource in resources_data)
-    drops.update({
-            drop["code"]: entity["code"]
-            for entity in monster_data + resources_data
-            for drop in entity["drops"]
-        })
 
     for map in maps_data:
         content = map.get("content")
@@ -118,6 +124,12 @@ async def initialize_data():
             code = content.get("code")
             coords = (map.get("x"), map.get("y"))
             maps[code].append(coords)
+
+    drops.update({
+        drop["code"]: entity["code"]
+        for entity in monster_data + resources_data
+        for drop in entity.get("drops", [])
+    })
 
     logger.info("Data initialized...")
     return
