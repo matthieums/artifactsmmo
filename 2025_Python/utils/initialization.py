@@ -5,6 +5,8 @@ from tzlocal import get_localzone
 from datetime import datetime
 import math
 import itertools
+import asyncio
+import state
 
 from data.monsters import monsters
 from data.resources import resources
@@ -14,7 +16,7 @@ from models.bank import Bank
 from models import Character
 from utils.requests_factory import send_request
 from models.task_manager import TaskManager
-from user_interface import load_character_tasks
+# from user_interface import load_character_tasks
 
 logger = logging.getLogger(__name__)
 NUMBER_OF_CHARACTERS = 5
@@ -78,13 +80,11 @@ async def initialize_bank():
 
 
 async def initialize_task_manager():
-    logger.info("Initializing task manager")
-
+    logger.info("Initializing task manager...")
     task_manager = TaskManager()
-    load_character_tasks(task_manager)
-
-    logger.info("Task manager initialized")
-    return task_manager
+    state.task_manager = task_manager
+    # load_character_tasks(task_manager)
+    asyncio.create_task(state.task_manager.listen())
 
 
 async def initialize_data():

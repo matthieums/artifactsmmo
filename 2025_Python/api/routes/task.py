@@ -14,8 +14,8 @@ async def task(request: TaskRequest):
     args = request.args
     kwargs = request.kwargs
 
-    state.task_manager.add_task(
-        iterations, character, task, *args, **kwargs
+    await state.task_manager.add_task(
+        character, task, iterations, *args, **kwargs
     )
 
     return {"message": "Task added succesfully"}

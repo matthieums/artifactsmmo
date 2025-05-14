@@ -8,7 +8,7 @@ router = APIRouter()
 async def get_queues():
     queues = state.task_manager.task_queues
     result = {
-        character.name: [
+        character_name: [
             {
                 "taskName": task.method.__name__,
                 "args": task.args,
@@ -16,6 +16,6 @@ async def get_queues():
             }
             for task in tasks
         ]
-        for character, tasks in queues.items()
+        for character_name, tasks in queues.items()
     }
     return result

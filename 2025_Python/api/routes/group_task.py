@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 from ..models import GroupTaskRequest
 import state
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -14,8 +16,8 @@ async def group_task(request: GroupTaskRequest):
     kwargs = request.kwargs
 
     for character in characters:
-        state.task_manager.add_task(
-            iterations, character, task, *args, **kwargs
+        await state.task_manager.add_task(
+            character, task, iterations, *args, **kwargs
         )
 
     return {"message": "Task added succesfully"}
