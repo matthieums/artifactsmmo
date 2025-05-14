@@ -81,7 +81,8 @@ class TaskManager:
         async with asyncio.TaskGroup() as tg:
             for char_name in state.characters:
                 if self._has_tasks(char_name):
-                    logger.info(f"Found tasks for {char_name}, starting task group.")
+                    logger.info(f"Found tasks for {char_name},"
+                                "starting task group.")
                     tg.create_task(self._start_tasks(char_name))
                 else:
                     logger.info(f"No tasks for {char_name}, skipping.")
