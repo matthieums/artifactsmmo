@@ -1,9 +1,7 @@
 from __future__ import annotations
 import logging
-from dateutil import parser
 from tzlocal import get_localzone
 from datetime import datetime
-import math
 import itertools
 import asyncio
 import state
@@ -34,33 +32,12 @@ async def initialize_characters(bank):
         local_tz = get_localzone()
         local_time = datetime.now(local_tz)
         data = response.json()["data"]
-        characters = [Character.from_api_data(entry, bank) for entry in data]
+        characters = await asyncio.gather(*(
+            Character.from_api_data(entry, bank, local_time)
+            for entry in data
+        ))
 
-        assert len(characters) == NUMBER_OF_CHARACTERS
-        logger.info("Characters succesfully initialized")
-
-        for i in range(len(characters)):
-            logging.debug(
-                f"{characters[i]}'s inventory initialized with: "
-                f"{characters[i].inventory}"
-            )
-            logging.debug(
-                f"{characters[i]}'s equipment initialized with: "
-                f"{characters[i].equipment}"
-            )
-
-            logger.info("Setting cooldown values...")
-            characters[i].cooldown_expiration = parser.isoparse(
-                data[i]["cooldown_expiration"]
-                )
-            characters[i].cooldown_duration = math.ceil(
-                (characters[i].cooldown_expiration - local_time)
-                .total_seconds()
-            )
-            logger.debug(
-                "Coolodown duration initialized to "
-                f"{characters[i].cooldown_duration}"
-            )
+        logger.info("Characters initialized")
 
         return characters
 
@@ -68,14 +45,16 @@ async def initialize_characters(bank):
 async def initialize_bank():
     logger.info("Initializing bank...")
     try:
-        bank_data = await Bank.get_bank_details()
-        bank_items = await Bank.get_bank_items()
+        bank_data, bank_items = await asyncio.gather(
+            Bank.get_bank_details(),
+            Bank.get_bank_items()
+        )
     except Exception as e:
         logger.error(f"Failed to initialize bank: {e}")
         raise
     else:
         bank = Bank.from_api_data(bank_data, bank_items)
-        logger.debug(f"Bank initialized with {repr(bank)}")
+        logger.info("Bank initialized")
         return bank
 
 

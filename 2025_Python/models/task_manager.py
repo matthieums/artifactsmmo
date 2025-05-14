@@ -29,16 +29,19 @@ class TaskManager:
         try:
             characters = list(state.characters)
             logger.debug("Listener starting...")
+            logged = False
             while True:
                 await asyncio.sleep(5)
                 if any(self._has_tasks(char) for char in characters):
                     async with self.lock:
                         logger.debug("Tasks detected")
                         await self._run_queues()
+                        logged = False
                         continue
-                else:
+                elif not logged:
                     logger.info("All queues are empty."
                                 "waiting for new tasks to be added...")
+                    logged = True
 
         except Exception as e:
             raise Exception(f"{str(e)}")

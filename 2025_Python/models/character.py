@@ -3,6 +3,9 @@ import asyncio
 from data import maps, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import logging
 from typing import TYPE_CHECKING, Optional
+from datetime import datetime
+from dateutil import parser
+import math
 
 from models import Item
 from models.inventory import Inventory
@@ -32,9 +35,11 @@ class Character():
         equipment: Equipment,
         max_items: int,
         combat: dict,
+        cooldown_duration: Optional[datetime] = 0,
         bank: Optional[Bank] = None,
         ongoing_task: Optional[str] = None,
-        skin: Optional[str] = None
+        skin: Optional[str] = None,
+        cooldown_expiration: Optional[int] = None,
     ) -> None:
         self.name = name
         self.hp = hp
@@ -45,8 +50,8 @@ class Character():
         self.inventory = inventory
         self.max_items = max_items
         self.combat = combat
-        self.cooldown_duration = 0
-        self.cooldown_expiration = None
+        self.cooldown_duration = cooldown_expiration
+        self.cooldown_expiration = cooldown_duration
         self.ongoing_task = ongoing_task
         self.skin = skin
         self.bank = bank
@@ -56,9 +61,18 @@ class Character():
         return self.cooldown_duration > 0
 
     @classmethod
-    def from_api_data(cls, data: dict, bank: Bank) -> Character:
+    async def from_api_data(
+        cls,
+        data: dict,
+        bank: Bank,
+        local_time: datetime
+    ) -> Character:
         inventory = Inventory.from_data(data)
         equipment = Equipment.from_data(data)
+        cooldown_expiration = parser.isoparse(data.get("cooldown_expiration"))
+        cooldown_duration = math.ceil(
+            (cooldown_expiration - local_time).total_seconds()
+        )
 
         character = cls(
             name=data.get("name"),
@@ -71,7 +85,9 @@ class Character():
             max_items=data.get("inventory_max_items"),
             combat={stat: data.get(stat) for stat in COMBAT_KEYS},
             bank=bank,
-            skin=data.get("skin")
+            skin=data.get("skin"),
+            cooldown_expiration=cooldown_expiration,
+            cooldown_duration=cooldown_duration
         )
 
         inventory.owner = character
