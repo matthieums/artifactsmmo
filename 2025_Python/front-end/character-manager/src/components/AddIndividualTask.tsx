@@ -22,7 +22,7 @@ export function AddTask({ characterName, taskName, kwargs = {} }: AddTaskProps) 
                 onChange={(e) => setIterations(Number(e.target.value))}
              />
             <button onClick={onclickHandler}>
-                {`Add ${taskName} ${Object.values(kwargs)}`}
+                {`Add ${taskName} ${Object.values(kwargs?? {})}`}
             </button>
         </div>
     )
