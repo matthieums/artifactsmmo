@@ -405,7 +405,7 @@ class Character():
 
         seconds = max(0.0, math.ceil((expiration - now).total_seconds()))
 
-        if seconds > 0:
+        if seconds > 0.01:
             logger.info(f"{self} is on cooldown for {seconds} seconds...")
 
         await asyncio.sleep(seconds)
