@@ -33,11 +33,10 @@ class TaskManager:
             while True:
                 await asyncio.sleep(5)
                 if any(self._has_tasks(char) for char in characters):
-                    async with self.lock:
-                        logger.debug("Tasks detected")
-                        await self._run_queues()
-                        logged = False
-                        continue
+                    logger.debug("Tasks detected")
+                    await self._run_queues()
+                    logged = False
+                    continue
                 elif not logged:
                     logger.info("All queues are empty."
                                 "waiting for new tasks to be added...")
@@ -75,7 +74,8 @@ class TaskManager:
 
     async def _start_tasks(self, char_name: str):
         while self.task_queues[char_name]:
-            task = self.task_queues[char_name].popleft()
+            async with self.lock:
+                task = self.task_queues[char_name].popleft()
             self.set_ongoing_task(char_name, task)
             logger.info(f"Running task for {char_name}: {task}")
             await task.run()
