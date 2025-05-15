@@ -14,8 +14,8 @@ export function CharacterList() {
 
     const tasks: Task[] = [
         {taskName: "fight", iterations: 1, kwargs: { location: "chicken" }},
-        {taskName: "gather", iterations: 1, kwargs: { resource: "copper_ore" }},
-        {taskName: "empty_inventory", iterations: 1}
+        {taskName: "gather", iterations: 1, kwargs: { resource: "copper_ore", quantity: 0 }},
+        {taskName: "deposit_all", iterations: 1}
     ]
 
     useEffect(() => {
