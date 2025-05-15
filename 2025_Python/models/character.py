@@ -87,8 +87,10 @@ class Character():
 
     async def perform_task(self, task):
         await self._execute_cooldown()
+
         self.ongoing_task = str(task)
         logger.info(f"{self} is performing {task}")
+
         try:
             await task.run()
         except Exception as e:
@@ -102,8 +104,6 @@ class Character():
         self.cooldown_expiration = formatted
 
     async def move_to(self, location: str) -> int:
-        await self._execute_cooldown()
-
         if location not in maps:
             logger.error("Undefined location")
             raise ValueError("Map doesn't exist in data.")
@@ -129,7 +129,6 @@ class Character():
 
     @check_character_position
     async def fight(self, location: str) -> int:
-        await self._execute_cooldown()
 
         LOW_HP_THRESHOLD = 0.5
         action = "fight"
@@ -158,7 +157,6 @@ class Character():
             await handle_fight_data(self, response)
 
     async def rest(self):
-        await self._execute_cooldown()
 
         try:
             await send_request(self, action="rest")
@@ -180,7 +178,6 @@ class Character():
         remaining = quantity or float("inf")
 
         while remaining > 0:
-            await self._execute_cooldown()
 
             if self.inventory.is_full():
                 await self.empty_inventory()
@@ -216,13 +213,11 @@ class Character():
         return item in self.equipment.values()
 
     async def equip(self, item_code: str) -> int:
-        await self._execute_cooldown()
 
         item = await Item.load(item_code)
         await self.equipment.equip(self, item)
 
     async def unequip(self, item_code):
-        await self._execute_cooldown()
 
         item = await Item.load(item_code)
         await self.equipment.unequip(self, item)
@@ -239,7 +234,6 @@ class Character():
 
         ingredients_needed = item_object.get_ingredients(quantity)
 
-        await self._execute_cooldown()
 
         # Craft immediately if all items are inventory
 
@@ -352,7 +346,6 @@ class Character():
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:
-        await self._execute_cooldown()
 
         try:
             await self.bank.deposit(self, quantity, item)
@@ -362,7 +355,6 @@ class Character():
 
     @check_character_position
     async def withdraw(self, item: str, quantity: int = None) -> int:
-        await self._execute_cooldown()
         await self.bank.withdraw(self, item, quantity)
 
     def __repr__(self):
