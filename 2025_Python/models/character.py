@@ -1,11 +1,12 @@
 from __future__ import annotations
-import asyncio
 from data import maps, XP_KEYS, HP_KEYS, COMBAT_KEYS
 import logging
 from typing import TYPE_CHECKING, Optional
 from datetime import datetime
 from dateutil import parser
 import math
+import asyncio
+import config
 
 from models import Item
 from models.inventory import Inventory
@@ -15,8 +16,8 @@ from data.utils import handle_fight_data
 from errors import CharacterActionError
 from utils.requests_factory import send_request
 from utils.helpers import subtract_dicts, determine_action
-
-
+from .character_utils import update_inventory
+from .constants import IDLE
 if TYPE_CHECKING:
     from models import Bank
 
@@ -27,7 +28,7 @@ class Character():
     def __init__(
         self,
         name: str,
-        hp: dict,
+        hp: dict[str[int]],
         levels: dict,
         gold: int,
         position: list,
@@ -35,7 +36,7 @@ class Character():
         equipment: Equipment,
         max_items: int,
         combat: dict,
-        cooldown_duration: Optional[datetime] = 0,
+        state: str = IDLE,
         bank: Optional[Bank] = None,
         ongoing_task: Optional[str] = None,
         skin: Optional[str] = None,
@@ -50,8 +51,7 @@ class Character():
         self.inventory = inventory
         self.max_items = max_items
         self.combat = combat
-        self.cooldown_duration = cooldown_expiration
-        self.cooldown_expiration = cooldown_duration
+        self.cooldown_expiration = cooldown_expiration
         self.ongoing_task = ongoing_task
         self.skin = skin
         self.bank = bank
@@ -69,12 +69,7 @@ class Character():
     ) -> Character:
         inventory = Inventory.from_data(data)
         equipment = Equipment.from_data(data)
-        local_tz = config.local_tz
-        local_time = datetime.now(local_tz)
         cooldown_expiration = parser.isoparse(data.get("cooldown_expiration"))
-        cooldown_duration = math.ceil(
-            (cooldown_expiration - local_time).total_seconds()
-        )
 
         character = cls(
             name=data.get("name"),
@@ -89,7 +84,6 @@ class Character():
             bank=bank,
             skin=data.get("skin"),
             cooldown_expiration=cooldown_expiration,
-            cooldown_duration=cooldown_duration
         )
 
         inventory.owner = character
@@ -131,10 +125,6 @@ class Character():
             if response.status_code == 200:
                 print(f"{self.name} has moved to {location}...")
                 self._update_position(location)
-                data = response.json()
-                await self._handle_cooldown(
-                    data["data"]["cooldown"]["total_seconds"]
-                )
                 return response
             elif response.status_code == 490:
                 logger.info("Character is already at destination")
@@ -154,7 +144,7 @@ class Character():
 
         try:
             response = await send_request(
-                self.name,
+                self,
                 action=action,
                 location=location
             )
@@ -170,29 +160,18 @@ class Character():
                 self.move_to(location)
 
             await handle_fight_data(self, response)
-            await self._handle_cooldown(
-                data["data"]["cooldown"]["total_seconds"]
-                )
 
     async def rest(self):
         await self._execute_cooldown()
 
         try:
-            response = await send_request(self.name, action="rest")
+            await send_request(self, action="rest")
         except Exception as e:
             logger.error(f"Error in fight method: {str(e)}")
             return 1
         else:
-            self.update_hp(self.hp["max_hp"])
-
-            data = response.json()
-            await self._handle_cooldown(
-                data["data"]["cooldown"]["total_seconds"]
-                )
+            self.hp["hp"] = ["max_hp"]
             return 1
-
-    def is_at_location(self, location: str):
-        return self.position == maps[location]
 
     @check_character_position
     async def gather(
@@ -211,7 +190,7 @@ class Character():
                 await self.empty_inventory()
             try:
                 response = await send_request(
-                    self.name,
+                    self,
                     action=action,
                     location=location
                     )
@@ -232,7 +211,7 @@ class Character():
 
                 for loot in looted_items:
                     code, qty = loot.get("code"), loot.get("quantity")
-                    self.update_inventory(item=code, quantity=qty)
+                    update_inventory(self, item=code, quantity=qty)
 
                     if code == resource:
                         remaining -= qty
@@ -241,10 +220,14 @@ class Character():
         return item in self.equipment.values()
 
     async def equip(self, item_code: str) -> int:
+        await self._execute_cooldown()
+
         item = await Item.load(item_code)
         await self.equipment.equip(self, item)
 
     async def unequip(self, item_code):
+        await self._execute_cooldown()
+
         item = await Item.load(item_code)
         await self.equipment.unequip(self, item)
 
@@ -273,7 +256,7 @@ class Character():
             for _ in range(quantity):
                 try:
                     response = await send_request(
-                        character=self.name,
+                        character=self,
                         action=action,
                         item=item_code
                         )
@@ -285,15 +268,13 @@ class Character():
                     data = response.json()["data"]
                     # TODO: Refactor update_inventory because of "-"
                     for code, qty in ingredients_needed.items():
-                        self.update_inventory(code, -qty)
+                        update_inventory(self, code, -qty)
                     for result_data in data["details"]["items"]:
-                        self.update_inventory(
+                        update_inventory(
+                            self,
                             result_data.get("code"),
                             result_data.get("quantity")
                             )
-                    await self.handle_cooldown(
-                        data["cooldown"]["total_seconds"]
-                        )
             return 1
 
         logger.debug(f"{self}'s inventory misses ingredients for crafting"
@@ -362,14 +343,6 @@ class Character():
         missing_from_source = subtract_dicts(materials, available)
         return missing_from_source
 
-    def update_inventory(self, item: str, quantity: int):
-        if quantity > 0:
-            self.inventory.add(item, quantity)
-        elif quantity < 0:
-            self.inventory.remove(item, abs(quantity))
-        else:
-            logger.error("Invalid quantity provided to update_inventory")
-
     @check_character_position
     async def deposit_all(self, exceptions: list = None) -> int:
         for item in list(self.inventory):
@@ -383,6 +356,8 @@ class Character():
 
     @check_character_position
     async def deposit(self, quantity: int = None, item: str = None) -> int:
+        await self._execute_cooldown()
+
         try:
             await self.bank.deposit(self, quantity, item)
         except Exception as e:
@@ -391,6 +366,7 @@ class Character():
 
     @check_character_position
     async def withdraw(self, item: str, quantity: int = None) -> int:
+        await self._execute_cooldown()
         await self.bank.withdraw(self, item, quantity)
 
     def __repr__(self):
