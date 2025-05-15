@@ -29,14 +29,11 @@ async def initialize_characters(bank):
         logger.error(f"Failed to initialize characters: {e}")
         raise
     else:
-        local_tz = get_localzone()
-        local_time = datetime.now(local_tz)
         data = response.json()["data"]
         characters = await asyncio.gather(*(
-            Character.from_api_data(entry, bank, local_time)
+            Character.from_api_data(entry, bank)
             for entry in data
         ))
-
         logger.info("Characters initialized")
 
         return characters

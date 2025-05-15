@@ -65,10 +65,11 @@ class Character():
         cls,
         data: dict,
         bank: Bank,
-        local_time: datetime
     ) -> Character:
         inventory = Inventory.from_data(data)
         equipment = Equipment.from_data(data)
+        local_tz = config.local_tz
+        local_time = datetime.now(local_tz)
         cooldown_expiration = parser.isoparse(data.get("cooldown_expiration"))
         cooldown_duration = math.ceil(
             (cooldown_expiration - local_time).total_seconds()
