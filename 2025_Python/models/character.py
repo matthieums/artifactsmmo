@@ -93,37 +93,6 @@ class Character():
         inventory.owner = character
         return character
 
-    async def handle_cooldown(self, seconds: int | None = None) -> None:
-        if seconds is None:
-            seconds = self.cooldown_duration
-
-        if seconds > 0:
-            logger.info(f"{self.name} is on cooldown for {seconds} seconds...")
-
-        await asyncio.sleep(seconds)
-        self.cooldown_duration = 0
-        return
-
-    def update_gold(self, quantity: int) -> int:
-        """Add a negative or positive value to the character's gold count"""
-        if quantity > 0:
-            print(f"{self.name} received {quantity} gold")
-        elif quantity < 0:
-            print(f"{self.name} lost {quantity} gold")
-        self.gold += quantity
-        return quantity
-
-    def update_hp(self, value: int) -> int:
-        """Add a negative or positive value to the character's hp count"""
-        if self.hp["hp"] > value:
-            print(f"{self.name} gained {abs(self.hp['hp'] - value)} hp")
-        elif self.hp["hp"] < value:
-            print(f"{self.name} lost {abs(self.hp['hp'] - value)} hp")
-        else:
-            print("no hp gain nor loss")
-        self.hp["hp"] = value
-        return 1
-
     async def move_to(self, location: str) -> int:
         if location not in maps:
             logger.error("Undefined location")
@@ -143,7 +112,7 @@ class Character():
                 print(f"{self.name} has moved to {location}...")
                 self._update_position(location)
                 data = response.json()
-                await self.handle_cooldown(
+                await self._handle_cooldown(
                     data["data"]["cooldown"]["total_seconds"]
                 )
                 return response
@@ -179,7 +148,7 @@ class Character():
                 self.move_to(location)
 
             await handle_fight_data(self, response)
-            await self.handle_cooldown(
+            await self._handle_cooldown(
                 data["data"]["cooldown"]["total_seconds"]
                 )
 
@@ -193,7 +162,7 @@ class Character():
             self.update_hp(self.hp["max_hp"])
 
             data = response.json()
-            await self.handle_cooldown(
+            await self._handle_cooldown(
                 data["data"]["cooldown"]["total_seconds"]
                 )
             return 1
@@ -397,3 +366,14 @@ class Character():
 
     def _update_position(self, location):
         self.position = maps[location]
+
+    async def _handle_cooldown(self, seconds: int | None = None) -> None:
+        if seconds is None:
+            seconds = self.cooldown_duration
+
+        if seconds > 0:
+            logger.info(f"{self} is on cooldown for {seconds} seconds...")
+
+        await asyncio.sleep(seconds)
+        self.cooldown_duration = 0
+        return
