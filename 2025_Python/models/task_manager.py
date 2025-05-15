@@ -4,6 +4,7 @@ import logging
 import state
 from models.task import Task
 from models.character import Character
+from .constants import WORKING, IDLE
 
 logger = logging.getLogger(__name__)
 
@@ -21,29 +22,18 @@ class TaskManager:
         *args,
         **kwargs
     ) -> None:
+        task = self._create_task(character, method_name, *args, **kwargs)
         async with self.lock:
-            task = self._create_task(character, method_name, *args, **kwargs)
             await self._enqueue_task(character, iterations, task)
 
     async def listen(self):
-        try:
-            characters = list(state.characters)
-            logger.debug("Listener starting...")
-            logged = False
-            while True:
-                await asyncio.sleep(5)
-                if any(self._has_tasks(char) for char in characters):
-                    logger.debug("Tasks detected")
-                    await self._run_queues()
-                    logged = False
-                    continue
-                elif not logged:
-                    logger.info("All queues are empty."
-                                "waiting for new tasks to be added...")
-                    logged = True
-
-        except Exception as e:
-            raise Exception(f"{str(e)}")
+        logger.debug("Listener starting...")
+        characters = state.characters.values()
+        while True:
+            for char in characters:
+                if char.state == IDLE and self._has_tasks(char):
+                    asyncio.create_task(self._run_queue(char))
+            await asyncio.sleep(5)
 
     @staticmethod
     def _create_task(
@@ -69,26 +59,14 @@ class TaskManager:
             self.task_queues[character.name].append(task)
         logger.debug("Enqueued task")
 
-    def _has_tasks(self, character_name):
-        return bool(self.task_queues[character_name])
+    def _has_tasks(self, character: "Character"):
+        return bool(self.task_queues[character.name])
 
-    async def _start_tasks(self, char_name: str):
-        while self.task_queues[char_name]:
+    async def _run_queue(self, character: "Character"):
+        name = character.name
+        character.state = WORKING
+        while self.task_queues[name]:
             async with self.lock:
-                task = self.task_queues[char_name].popleft()
-            self.set_ongoing_task(char_name, task)
-            logger.info(f"Running task for {char_name}: {task}")
-            await task.run()
-
-    async def _run_queues(self):
-        async with asyncio.TaskGroup() as tg:
-            for char_name in state.characters:
-                if self._has_tasks(char_name):
-                    logger.info(f"Found tasks for {char_name},"
-                                "starting task group.")
-                    tg.create_task(self._start_tasks(char_name))
-                else:
-                    logger.info(f"No tasks for {char_name}, skipping.")
-
-    def set_ongoing_task(self, char_name: str, task: Task):
-        state.characters[char_name].ongoing_task = str(task)
+                task = self.task_queues[name].popleft()
+            await character.perform_task(task)
+        character.state = IDLE

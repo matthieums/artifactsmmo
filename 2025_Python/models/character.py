@@ -55,6 +55,7 @@ class Character():
         self.ongoing_task = ongoing_task
         self.skin = skin
         self.bank = bank
+        self.state = state
 
     @property
     def is_on_cooldown(self):
@@ -93,6 +94,18 @@ class Character():
 
         inventory.owner = character
         return character
+
+    async def perform_task(self, task):
+        await self._execute_cooldown()
+        self.ongoing_task = str(task)
+        logger.info(f"{self} is performing {task}")
+        try:
+            await task.run()
+        except Exception as e:
+            logger.error(f"Exception occured during task: {{str({e})}}")
+            raise
+        finally:
+            self.ongoing_task = None
 
     def set_cooldown_expiration(self, expiration):
         formatted = parser.isoparse(expiration)
