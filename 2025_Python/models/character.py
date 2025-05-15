@@ -94,7 +94,13 @@ class Character():
         inventory.owner = character
         return character
 
+    def set_cooldown_expiration(self, expiration):
+        formatted = parser.isoparse(expiration)
+        self.cooldown_expiration = formatted
+
     async def move_to(self, location: str) -> int:
+        await self._execute_cooldown()
+
         if location not in maps:
             logger.error("Undefined location")
             raise ValueError("Map doesn't exist in data.")
@@ -124,6 +130,8 @@ class Character():
 
     @check_character_position
     async def fight(self, location: str) -> int:
+        await self._execute_cooldown()
+
         LOW_HP_THRESHOLD = 0.5
         action = "fight"
 
@@ -154,6 +162,8 @@ class Character():
                 )
 
     async def rest(self):
+        await self._execute_cooldown()
+
         try:
             response = await send_request(self.name, action="rest")
         except Exception as e:
@@ -182,6 +192,8 @@ class Character():
         remaining = quantity or float("inf")
 
         while remaining > 0:
+            await self._execute_cooldown()
+
             if self.inventory.is_full():
                 await self.empty_inventory()
             try:
@@ -212,10 +224,6 @@ class Character():
                     if code == resource:
                         remaining -= qty
 
-                await self.handle_cooldown(
-                    data["data"]["cooldown"]["total_seconds"]
-                    )
-
     def has_equipped(self, item: str):
         return item in self.equipment.values()
 
@@ -238,6 +246,8 @@ class Character():
         bank = self.bank
 
         ingredients_needed = item_object.get_ingredients(quantity)
+
+        await self._execute_cooldown()
 
         # Craft immediately if all items are inventory
 
@@ -376,13 +386,14 @@ class Character():
     def _update_position(self, location):
         self.position = maps[location]
 
-    async def _handle_cooldown(self, seconds: int | None = None) -> None:
-        if seconds is None:
-            seconds = self.cooldown_duration
+    async def _execute_cooldown(self) -> None:
+        now = datetime.now(config.local_tz)
+        expiration = self.cooldown_expiration
+
+        seconds = max(0.0, math.ceil((expiration - now).total_seconds()))
 
         if seconds > 0:
             logger.info(f"{self} is on cooldown for {seconds} seconds...")
 
         await asyncio.sleep(seconds)
-        self.cooldown_duration = 0
         return

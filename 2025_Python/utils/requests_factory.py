@@ -1,4 +1,4 @@
-from typing import Optional, Any, Dict, Callable
+from typing import Optional, Any, Dict, Callable, TYPE_CHECKING
 import config
 import json
 import httpx
@@ -8,6 +8,9 @@ import asyncio
 from utils.map import find_closest
 from utils.feedback import format_action_message
 
+if TYPE_CHECKING:
+    from models.character import Character
+
 logger = logging.getLogger(__name__)
 POST = "POST"
 GET = "GET"
@@ -15,7 +18,7 @@ BASE_URL = "https://api.artifactsmmo.com"
 
 
 async def send_request(
-    character: Optional[str] = None,
+    character: Optional["Character"] = None,
     action: Optional[str] = None,
     location: Optional[str] = None,
     item: Optional[str] = None,
@@ -47,6 +50,11 @@ async def send_request(
         format_action_message(character, action, location)
     else:
         logger.debug(f"Error occured during request for {handler}")
+
+    if action in character_actions:
+        character.set_cooldown_expiration(
+            response.json()["data"]["cooldown"]["expiration"]
+        )
     return response
 
 
@@ -175,12 +183,6 @@ async def equip_action(character, action, item, slot, *args, **kwargs):
     )
 
 
-async def item_info(item, *args, **kwargs):
-    headers = build_headers(GET)
-    url = f"{BASE_URL}/items/{item}"
-    return await make_get_request(url=url, headers=headers)
-
-
 async def bank_action(character, action, item, quantity, *args, **kwargs):
     headers = build_headers(POST)
     url = f"{BASE_URL}/my/{character}/action/bank/{action}"
@@ -192,6 +194,12 @@ async def bank_action(character, action, item, quantity, *args, **kwargs):
     return await make_post_request(
         url=url, headers=headers, data=json_data
     )
+
+
+async def item_info(item, *args, **kwargs):
+    headers = build_headers(GET)
+    url = f"{BASE_URL}/items/{item}"
+    return await make_get_request(url=url, headers=headers)
 
 
 async def get_characters(*args, **kwargs):
@@ -244,21 +252,35 @@ async def get_all_maps(*args, **kwargs):
 
 dispatcher: Dict[str, Callable[..., Any]] = {
     "move": move_action,
-    "map_data": map_data,
     "fight": fight_action,
     "rest": rest_action,
     "gather": gather_action,
     "craft": craft_action,
     "equip": equip_action,
     "unequip": equip_action,
-    "item_info": item_info,
     "char_data": get_characters,
     "withdraw": bank_action,
     "empty": bank_action,
     "deposit": bank_action,
     "bank_details": bank_details,
+    "item_info": item_info,
     "bank_items": bank_items,
     "get_all_monsters": get_all_monsters,
     "get_all_resources": get_all_resources,
     "get_all_maps": get_all_maps,
+    "map_data": map_data,
+}
+
+
+character_actions = {
+    "move",
+    "fight",
+    "rest",
+    "gather",
+    "craft",
+    "equip",
+    "unequip",
+    "withdraw",
+    "empty",
+    "deposit",
 }

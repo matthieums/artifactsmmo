@@ -1,7 +1,5 @@
 from __future__ import annotations
 import logging
-from tzlocal import get_localzone
-from datetime import datetime
 import itertools
 import asyncio
 import state
