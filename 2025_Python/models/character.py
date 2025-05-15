@@ -57,10 +57,6 @@ class Character():
         self.bank = bank
         self.state = state
 
-    @property
-    def is_on_cooldown(self):
-        return self.cooldown_duration > 0
-
     @classmethod
     async def from_api_data(
         cls,
