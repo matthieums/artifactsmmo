@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+SUCCESS = 200
 
 class Character():
     def __init__(
@@ -86,8 +87,10 @@ class Character():
         return character
 
     async def perform_task(self, task):
+        await self.move_if_needed(task)
         await self._execute_cooldown()
 
+        self.state = WORKING
         self.ongoing_task = str(task)
         logger.info(f"{self} is performing {task}")
 
@@ -114,7 +117,46 @@ class Character():
         finally:
             self.ongoing_task = None
 
-    def set_cooldown_expiration(self, expiration):
+    async def move_if_needed(self, task):
+        kwargs = dict(task.kwargs)
+        required_position = kwargs.get("location")
+
+        if not required_position:
+            if task.method.__name__ in bank_actions:
+                required_position = "bank"
+            elif kwargs.get("resource"):
+                required_position = find_source(kwargs["resource"])
+            else:
+                logger.error("No position was found")
+                raise RuntimeError('Missing location')
+
+        if not any(
+            self.position == pos for pos in maps[required_position]
+        ):
+            try:
+                await self._execute_cooldown()
+                response = await self.move_to(required_position)
+            except Exception as e:
+                raise e
+            else:
+                if response.status_code == SUCCESS:
+                    cooldown_expiration = (
+                            response.json()
+                            .get("data", {})
+                            .get("cooldown", {})
+                            .get("expiration")
+                        )
+                    self.set_cooldown_expiration(cooldown_expiration)
+                else:
+                    logger.error("Error during 'move if needed' function")
+                    logger.error(f"{response.text}")
+                return response
+
+    def set_cooldown_expiration(self, expiration: str | None) -> None:
+        if expiration is None:
+            logger.warning("No cooldown received for the executed task")
+            return
+
         formatted = parser.isoparse(expiration)
         self.cooldown_expiration = formatted
 
@@ -133,6 +175,8 @@ class Character():
             logger.error(f"Error in move method: {str(e)}")
             raise
         else:
+            if response.status_code == SUCCESS:
+                self._update_position(location)
             return response
 
     @check_character_position
@@ -183,6 +227,7 @@ class Character():
         quantity: int = None,
         location: str = None
     ) -> int:
+        location = find_source(resource)
         action = determine_action(location)
         remaining = quantity or float("inf")
 
@@ -201,13 +246,10 @@ class Character():
                              f"{location}. \n{str(e)}")
                 raise
             else:
-                if not response.is_success:
-                    raise CharacterActionError(
-                        response,
-                        self.name,
-                        action,
-                        location
-                    )
+                if response.status_code != SUCCESS:
+                    logger.error("Error during 'move if needed' function")
+                    return response
+
                 data = response.json()
                 looted_items = data["data"]["details"]["items"]
 
@@ -217,7 +259,19 @@ class Character():
 
                     if code == resource:
                         remaining -= qty
-                return response
+                        logger.debug(
+                            f"Remaining quantity to gather = {remaining}"
+                        )
+
+                cooldown_expiration = (
+                        response.json()
+                        .get("data", {})
+                        .get("cooldown", {})
+                        .get("expiration")
+                    )
+                self.set_cooldown_expiration(cooldown_expiration)
+                await self._execute_cooldown()
+        return response
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()
@@ -250,6 +304,7 @@ class Character():
         if self.inventory.contains_everything(needed):
             logger.debug(f"{self}'s inventory contains everything for crafting"
                          f"{item_code}")
+
             if self.position != maps[item_object.skill]:
                 await self.move_to(item_object.skill)
 
@@ -264,6 +319,7 @@ class Character():
                     logger.error(f"{self.name} failed to craft {item_code}."
                                  f"\n{e}")
                     logger.error("response: ", response.text)
+                    raise
                 else:
                     data = response.json()["data"]
                     # TODO: Refactor update_inventory because of "-"
@@ -343,7 +399,6 @@ class Character():
         missing_from_source = subtract_dicts(materials, available)
         return missing_from_source
 
-    @check_character_position
     async def deposit(self, item: str = None, quantity: int = None) -> int:
         try:
             response = await self.bank.deposit(self, item, quantity)
@@ -353,7 +408,6 @@ class Character():
         else:
             return response
 
-    @check_character_position
     async def withdraw(self, item: str, quantity: int = None) -> int:
         await self.bank.withdraw(self, item, quantity)
 
