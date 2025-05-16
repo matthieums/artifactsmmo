@@ -83,11 +83,7 @@ class Bank(ItemContainer):
             async with self.lock:
                 self.add(item, quantity)
             character.inventory.remove(item, deposit_amount)
-            data = response.json()
-            await character.handle_cooldown(
-                data["data"]["cooldown"]["total_seconds"]
-                )
-            return 1
+            return response
 
     async def withdraw(
             self,
@@ -117,9 +113,7 @@ class Bank(ItemContainer):
                 self.remove(item, quantity)
             data = response.json()
             print(f"{character} withdrew {withdraw_amount} {item}")
-            await character.handle_cooldown(
-                data["data"]["cooldown"]["total_seconds"]
-                )
+            return response
 
     def remove(self, item, quantity):
         inventory = self.inventory
