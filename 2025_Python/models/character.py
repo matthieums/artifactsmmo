@@ -334,24 +334,14 @@ class Character():
         return missing_from_source
 
     @check_character_position
-    async def deposit_all(self, exceptions: list = None) -> int:
-        for item in list(self.inventory):
-            code, qty = item
-            if item not in exceptions:
-                try:
-                    await self.deposit(qty, code)
-                except Exception as e:
-                    logger.error(f"Error during empty inventory: {str(e)}")
-                    raise
-
-    @check_character_position
-    async def deposit(self, quantity: int = None, item: str = None) -> int:
-
+    async def deposit(self, item: str = None, quantity: int = None) -> int:
         try:
-            await self.bank.deposit(self, quantity, item)
+            response = await self.bank.deposit(self, item, quantity)
         except Exception as e:
             logger.error(f"Error during deposit: {str(e)}")
             raise
+        else:
+            return response
 
     @check_character_position
     async def withdraw(self, item: str, quantity: int = None) -> int:

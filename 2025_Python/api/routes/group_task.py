@@ -15,9 +15,19 @@ async def group_task(request: GroupTaskRequest):
     args = request.args
     kwargs = request.kwargs
 
-    for character in characters:
-        await state.task_manager.add_task(
-            character, task, iterations, *args, **kwargs
-        )
+    if task == "deposit_all":
+        task = "deposit"
+        for character in characters:
+            for item, qty in character.inventory:
+                kwargs["item"] = item
+                kwargs["quantity"] = qty
+                await state.task_manager.add_task(
+                    character, task, iterations, *args, **kwargs
+                )
+    else:
+        for character in characters:
+            await state.task_manager.add_task(
+                character, task, iterations, *args, **kwargs
+            )
 
     return {"message": "Task added succesfully"}

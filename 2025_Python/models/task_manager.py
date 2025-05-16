@@ -52,12 +52,17 @@ class TaskManager:
         self,
         character: Character,
         iterations: int,
-        task: Task
+        task: Task,
     ) -> None:
-        logger.debug("Enqueuing task")
+        left_appended = ["deposit"]
+
         for _ in range(iterations):
-            self.task_queues[character.name].append(task)
-        logger.debug("Enqueued task")
+            if task.method.__name__ in left_appended:
+                self.task_queues[character.name].appendleft(task)
+                logger.debug("Left appended task")
+            else:
+                self.task_queues[character.name].append(task)
+                logger.debug("Right appended task")
 
     def _has_tasks(self, character: "Character"):
         return bool(self.task_queues[character.name])

@@ -67,7 +67,10 @@ class Inventory:
     def get(self, item: str | Item):
         """Return quantity of an item in inventory. Returns 0 if item not
         present."""
-        code = item if isinstance(item, str) else item.code
+        if isinstance(item, Item):
+            code = item.code
+        else:
+            code = item
 
         quantity = self.slots.get(code, 0)
 
