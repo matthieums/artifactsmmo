@@ -39,23 +39,25 @@ async def send_request(
     }
 
     handler = dispatcher[action]
-    response = await handler(**kwargs)
-
-    # Special case for map_data
-    if isinstance(response, list):
-        return response
-
-    if response.status_code == 200:
+    try:
+        response = await handler(**kwargs)
+    except Exception as e:
+        logger.error(f"{str(e)}")
+        raise
+    else:
         logger.debug("Request successful")
         format_action_message(character, action, location)
-    else:
-        logger.debug(f"Error occured during request for {handler}")
 
-    if action in character_actions:
-        character.set_cooldown_expiration(
-            response.json()["data"]["cooldown"]["expiration"]
-        )
-    return response
+        # Special case for map_data
+        if isinstance(response, list):
+            return response
+
+        if action in character_actions and response.status_code == 200:
+            character.set_cooldown_expiration(
+                response.json()["data"]["cooldown"]["expiration"]
+            )
+            logger.debug(f'Cooldown set to {response.json()["data"]["cooldown"]["expiration"]}')
+        return response
 
 
 async def make_post_request(
