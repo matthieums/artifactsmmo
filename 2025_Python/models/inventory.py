@@ -7,7 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class Inventory:
-    def __init__(self, owner: object, slots: defaultdict, max_capacity: int):
+    def __init__(
+            self,
+            owner: object,
+            slots: defaultdict[str, int],
+            max_capacity: int
+    ):
         self.owner = owner
         self.slots = slots
         self.max_capacity = max_capacity
