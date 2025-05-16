@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 async def start_app_server():
     config = Config(
-        "api.server:app", host="127.0.0.1", port=8000, log_level="info"
+        "api.server:app", host="127.0.0.1", port=8000
     )
     await Server(config).serve()
 
@@ -30,6 +30,8 @@ async def start_react_server():
         stderr=asyncio.subprocess.PIPE
     )
 
+    react_started = asyncio.Event()
+
     async def log_stream(stream, is_error=False):
         while True:
             line = await stream.readline()
@@ -38,15 +40,19 @@ async def start_react_server():
             decoded = line.decode().strip()
             if is_error:
                 logger.error(f"React: {decoded}")
-            else:
-                logger.info(f"React: {decoded}")
+                raise Exception("Error while trying to start React server")
 
-    await asyncio.gather(
-        log_stream(process.stdout),
-        log_stream(process.stderr, is_error=True),
-    )
-    await process.wait()
-    logger.info("React server started.")
+            if "Compiled successfully" in decoded:
+                react_started.set()
+
+    stdout_task = asyncio.create_task(log_stream(process.stdout))
+    stderr_task = asyncio.create_task(log_stream(process.stderr, is_error=True))
+    logger.info("React running on http://localhost:3000")
+    logger.info("*********Initialization complete*********\n")
+
+    await react_started.wait()
+
+    await asyncio.gather(stdout_task, stderr_task)
 
 
 async def initialize():
@@ -64,6 +70,7 @@ async def initialize():
 async def create_instance():
     await initialize()
     await asyncio.gather(start_app_server(), start_react_server())
+
 
 if __name__ == "__main__":
     asyncio.run(create_instance())
