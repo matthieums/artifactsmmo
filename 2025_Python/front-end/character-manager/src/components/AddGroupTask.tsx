@@ -12,6 +12,18 @@ interface AddGroupTaskProps {
 
 export function AddGroupTask({taskName, kwargs }: AddGroupTaskProps) {
     const [iterations, setIterations] = useState<number>(1)
+    const [quantity, setQuantity] = useState<number>(0)
+    
+    let quantityInput = null
+    if (taskName === "gather") {
+        quantityInput = 
+            <input 
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                placeholder="How much?"
+            />
+    }
 
     return (
         <div>
@@ -23,15 +35,20 @@ export function AddGroupTask({taskName, kwargs }: AddGroupTaskProps) {
             <button onClick={onclickHandler}>
                 {`Add ${taskName} ${Object.values(kwargs?? {})}`}
             </button>
+            {quantityInput}
         </div>
     )
 
     async function onclickHandler() {
+        const finalKwargs = {
+            ...(kwargs || {}),
+            ...(taskName === "gather" && quantity ? { quantity } : {})
+        }
         const taskPayload = {
             iterations: iterations,
             task_name: taskName,
             args: [],
-            kwargs: kwargs
+            kwargs: finalKwargs
         };
 
         try {
