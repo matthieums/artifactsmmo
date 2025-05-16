@@ -68,6 +68,7 @@ export function CharacterList() {
             {Object.values(characters).map((char) => (
                 <div key={char.name}>{char.name}
                     <CharacterImage source={`https://artifactsmmo.com/images/characters/${char.skin}.png/`} />
+                    <div>{`${char.state}..`}</div>
                     <div>{`${char.ongoing_task}..`}</div>
                         <div>
                             {tasks.map((t, i) => (
