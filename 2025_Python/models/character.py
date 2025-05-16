@@ -92,10 +92,25 @@ class Character():
         logger.info(f"{self} is performing {task}")
 
         try:
-            await task.run()
+            response = await task.run()
         except Exception as e:
-            logger.error(f"Exception occured during task: {{str({e})}}")
+            logger.error(f"Exception occured during task: {str({e})}")
             raise
+        else:
+            if response.status_code == SUCCESS:
+                logger.info(f"{self} executed {task} successfully.")
+                cooldown_expiration = (
+                    response.json()
+                    .get("data", {})
+                    .get("cooldown", {})
+                    .get("expiration")
+                )
+                self.set_cooldown_expiration(cooldown_expiration)
+            else:
+                logger.error(
+                    f"{task} failed with status "
+                    f"{response.status_code}: {response.text}"
+                )
         finally:
             self.ongoing_task = None
 
@@ -116,16 +131,9 @@ class Character():
             )
         except Exception as e:
             logger.error(f"Error in move method: {str(e)}")
-            return 1
+            raise
         else:
-            if response.status_code == 200:
-                print(f"{self.name} has moved to {location}...")
-                self._update_position(location)
-                return response
-            elif response.status_code == 490:
-                logger.info("Character is already at destination")
-            else:
-                logger.error(f"Error during move function: {response.text}")
+            return response
 
     @check_character_position
     async def fight(self, location: str) -> int:
@@ -155,6 +163,7 @@ class Character():
                 self.move_to(location)
 
             await handle_fight_data(self, response)
+            return response
 
     async def rest(self):
 
@@ -188,9 +197,9 @@ class Character():
                     location=location
                     )
             except Exception as e:
-                logging.error(f"Action '{action}' failed for {self.name} at"
-                              f"{location}. \n{e}")
-                return 0
+                logger.error(f"Action '{action}' failed for {self.name} at"
+                             f"{location}. \n{str(e)}")
+                raise
             else:
                 if not response.is_success:
                     raise CharacterActionError(
@@ -208,6 +217,7 @@ class Character():
 
                     if code == resource:
                         remaining -= qty
+                return response
 
     def has_equipped(self, item: str):
         return item in self.equipment.values()
@@ -215,12 +225,12 @@ class Character():
     async def equip(self, item_code: str) -> int:
 
         item = await Item.load(item_code)
-        await self.equipment.equip(self, item)
+        return await self.equipment.equip(self, item)
 
     async def unequip(self, item_code):
 
         item = await Item.load(item_code)
-        await self.equipment.unequip(self, item)
+        return await self.equipment.unequip(self, item)
 
     async def craft(self, item_code: str, quantity: int | None = 1) -> int:
         """Attempts to craft an item from inventory resources.
@@ -265,7 +275,7 @@ class Character():
                             result_data.get("code"),
                             result_data.get("quantity")
                             )
-            return 1
+                    return response
 
         logger.debug(f"{self}'s inventory misses ingredients for crafting"
                      f"{item_code}")
